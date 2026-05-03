@@ -1,0 +1,95 @@
+Claude finished the responseYou said: I've partially implemented BWOIT on my Vulkan renderer, without properly merging the opaque objects (testing the accum and reveal mainly in the resolve pass).USDRenderEngine.cppcppRender.cppcppVulkan.cppcppShaders.cpp535 linescppI've partially implemented BWOIT on my Vulkan renderer, without properly merging the opaque objects (testing the accum and reveal mainly in the resolve pass).  The render works, but it appears semi-transparent, as if the objects needed proper sorting, which of course, should not be needed.  Can you find what I am doing wrong - start with USDRenderEngine.cpp, Render.cpp next, Shaders.cpp after and Vulkan.cpp last?7:17 PMClaude responded: Now I have a complete picture.Systematically traced rendering pipeline bugs across multiple filesSystematically traced rendering pipeline bugs across multiple filesNow I have a complete picture. Here is a prioritized breakdown of every bug I found, file by file.
+
+USDRenderEngine.cpp
+🔴 Bug 1 — Resolve ortho has bottom/top swapped (root cause of semi-transparency)
+cpp// begin() uses this convention throughout the file:
+setTransform(math::ortho(
+    0.F, static_cast<float>(renderSize.w),
+    0.F,                                     // ← bottom
+    static_cast<float>(renderSize.h),        // ← top
+    -1.F, 1.F));
+
+// But the resolve ortho swaps them:
+auto ortho = math::ortho(
+    0.F, static_cast<float>(renderSize.w),
+    static_cast<float>(renderSize.h),        // ← now bottom
+    0.F,                                     // ← now top
+    -1.F, 1.F);
+This flips the Y-axis only for the resolve pass. The fullscreen quad is rendered upside down, so accumTex and revealTex are sampled with V inverted relative to the opaque scene. Transparent contributions end up composited at the wrong vertical positions — fragments from the top of the scene are blended onto the bottom and vice versa. The result looks like "wrong ordering" (i.e. semi-transparent), but it's actually a geometry/UV mismatch. Fix it to match begin():
+cppauto ortho = math::ortho(
+    0.F, static_cast<float>(renderSize.w),
+    0.F, static_cast<float>(renderSize.h),   // bottom=0, top=h — same as begin()
+    -1.F, 1.F);
+🟡 Bug 2 — Redundant FBO transitions before createOIT()
+cppp.fbo->transitionToColorAttachment(cmd);        // done here…
+p.fbo->transitionDepthToStencilAttachment(cmd); // and here…
+
+p.render->createOIT();   // …and then again inside createOIT()
+createOIT() already calls p.fbo->transitionDepthToStencilAttachment(p.cmd) unconditionally. The outer transitions are harmless but produce redundant barriers. Remove the outer pair.
+
+Render.cpp
+🟡 Bug 3 — p.renderPass is set to the clear pass but load pass is what's used
+cpp// begin():
+p.renderPass = fbo->getClearRenderPass();   // stored here…
+Everywhere that actually draws (_createPipeline and beginLoadRenderPass) uses fbo->getLoadRenderPass(). Any external caller of getRenderPass() — including this in USDRenderEngine.cpp:
+cppauto oldRenderPass = p.render->getRenderPass(); // returns the CLEAR pass
+…receives a stale/wrong render pass handle. oldRenderPass is unused in the current code, but the inconsistency is a trap. Either store the load render pass, or remove getRenderPass() from the interface.
+
+Shaders.cpp
+🔴 Bug 4 — Reveal blend comment contradicts the actual Vulkan blend state
+glsl// Reveal: the blend state is (ZERO, ONE_MINUS_SRC_ALPHA)   ← WRONG
+// so src_alpha is what drives the multiplicative accumulation
+outReveal = opacity;
+The actual blend state configured in Vulkan.cpp is:
+cpprevealBlend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR; // not SRC_ALPHA
+These are not equivalent. ONE_MINUS_SRC_COLOR uses the R channel of the source (= opacity, written by out float outReveal), giving (1 − opacity) × R_dst — which is the correct WBOIT product accumulation. If the blend were changed to ONE_MINUS_SRC_ALPHA to match the comment, the source alpha for a float output is effectively 0, so the factor becomes (1 − 0) = 1 and the reveal buffer never changes from its clear value of 1.0 — making alpha = 1 − 1 = 0 in the resolve pass and all transparency vanishing. Fix the comment:
+glsl// Reveal: blend is (ZERO, ONE_MINUS_SRC_COLOR).
+// R_dst = (1 − R_src) × R_dst = (1 − opacity) × R_dst
+// Accumulated across N fragments: product(1 − opacity_i)
+outReveal = opacity;
+🟠 Bug 5 — OIT weight floor is non-zero
+glslfloat weight = clamp(pow(opacity, 4.0) + 0.01, 0.001, 300.0);
+The + 0.01 constant means every fragment, even one at the opacity discard boundary (≈ 0.05), gets a weight of at least ≈ 0.0101. This biases the weighted average in the accum buffer toward low-opacity fragments. A depth-based weight (standard McGuire–Bavoil) avoids this and gives order-correctness across depth:
+glslfloat z    = gl_FragCoord.z / gl_FragCoord.w;  // view-space depth
+float weight = clamp(pow(min(1.0, opacity * 10.0), 3.0) *
+               1e8 * pow(1.0 - z * 0.9, 3.0), 1e-2, 3e3);
+
+Vulkan.cpp
+🔴 Bug 6 — Resolve pipeline has depth testing enabled (making resolve fail over near geometry)
+cpp// drawRect():
+_createPipeline(p.fbo, pipelineName,
+                "resolve", "resolve", "resolve",
+                enableBlending);  // depth params use defaults
+The overload dispatches to:
+cppds.depthTestEnable  = fbo->hasDepth() ? depthTest  : VK_FALSE;
+ds.depthWriteEnable = fbo->hasDepth() ? depthWrite : VK_FALSE;
+Because the FBO has depth (storeDepth = true), and the default depthTest is VK_TRUE, the fullscreen resolve quad is depth-tested against the opaque depth buffer. The quad rendered under the ortho projection sits at NDC z ≈ 0.5, so it fails the depth test wherever an opaque object is closer than that (depth < 0.5), and passes where opaques are farther. This makes the resolve partially succeed and partially fail, producing inconsistent transparency compositing across the screen. Explicitly disable depth for the resolve:
+cpp_createPipeline(p.fbo, pipelineName,
+                "resolve", "resolve", "resolve",
+                enableBlending,
+                VK_BLEND_FACTOR_SRC_ALPHA,
+                VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+                VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO,
+                VK_BLEND_OP_ADD, VK_BLEND_OP_ADD,
+                VK_FALSE,   // depthTest  ← must be FALSE
+                VK_FALSE);  // depthWrite ← must be FALSE
+🟠 Bug 7 — USE_DEPENDENCIES 0 leaves depth synchronization implicit
+cpp#define USE_DEPENDENCIES 0
+Without subpass dependencies, the OIT render pass relies solely on the layout transition barrier (transitionDepthToStencilAttachment) to make depth writes from the opaque pass visible to the OIT depth test reads. While layout transitions do imply a memory barrier in Vulkan, explicit subpass dependencies with the correct stage/access masks are the guaranteed-correct way to synchronize across render passes. Enable USE_DEPENDENCIES and fix the syntax error in the disabled code block:
+cppVkSubpassDependency opaqueOIT = {};  // was missing `= {}`
+🟡 Bug 8 — OIT framebuffer is unconditionally destroyed and recreated every frame
+cpp// Always push to garbage:
+p.garbage[p.frameIndex].framebuffers.push_back(p.oitFramebuffer[p.frameIndex]);
+p.oitFramebuffer[p.frameIndex] = VK_NULL_HANDLE;
+// Then always create a new one
+Add a size check before destroying/recreating — the framebuffer only needs to change when the render size changes:
+cppif (p.oitFramebuffer[p.frameIndex] != VK_NULL_HANDLE &&
+    p.fbo->getWidth()  == cachedOITWidth &&
+    p.fbo->getHeight() == cachedOITHeight)
+{
+    return; // reuse existing framebuffer
+}
+
+Summary Table
+#FileSeverityDescription1USDRenderEngine.cpp🔴 CriticalResolve ortho has bottom/top swapped → UV reads accum/reveal upside down4Shaders.cpp🔴 CriticalComment says ONE_MINUS_SRC_ALPHA but blend must be ONE_MINUS_SRC_COLOR6Vulkan.cpp🔴 CriticalResolve fullscreen quad is depth-tested against opaque depth buffer7Vulkan.cpp🟠 SignificantNo subpass dependencies — depth sync between opaque and OIT passes is implicit only5Shaders.cpp🟠 SignificantWeight function floor (+0.01) and no depth term biases WBOIT quality3Render.cpp🟡 Moderatep.renderPass stores clear pass; load pass is what's actually used2USDRenderEngine.cpp🟡 MinorRedundant transitions before createOIT()8Vulkan.cpp🟡 MinorOIT framebuffer recreated unconditionally every frame
+The primary cause of the semi-transparent appearance is Bug 1 (inverted ortho making accum/reveal sample upside-down) compounded by Bug 6 (depth test on the resolve quad blocking correct compositing over near geometry). Fix those two and the WBOIT result should look correct.

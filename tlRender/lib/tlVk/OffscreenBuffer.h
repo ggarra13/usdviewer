@@ -1,0 +1,293 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2024 Darby Johnston
+// Copyright (c) 2025-Present Gonzalo Garramuño
+// All rights reserved.
+
+#pragma once
+
+#include <tlVk/Vk.h>
+
+#include <tlTimeline/ImageOptions.h>
+
+#include <tlCore/Color.h>
+#include <tlCore/Image.h>
+#include <tlCore/Size.h>
+
+namespace tl
+{
+    namespace vlk
+    {
+        
+        //! Default offscreen buffer color type.
+        const image::PixelType offscreenColorDefault =
+            image::PixelType::RGBA_U8;
+
+        //! Offscreen buffer depth size.
+        enum class OffscreenDepth {
+            kNone,
+            _16,
+            _24,
+            _32,
+
+            Count,
+            First = kNone
+        };
+        TLRENDER_ENUM(OffscreenDepth);
+        TLRENDER_ENUM_SERIALIZE(OffscreenDepth);
+
+        //! Default offscreen buffer color type.
+#if defined(TLRENDER_API_GL_4_1)
+        const OffscreenDepth offscreenDepthDefault = OffscreenDepth::_16;
+#elif defined(TLRENDER_API_GLES_2)
+        const OffscreenDepth offscreenDepthDefault = OffscreenDepth::_24;
+#else
+        const OffscreenDepth offscreenDepthDefault = OffscreenDepth::_16;
+#endif // TLRENDER_API_GL_4_1
+
+        //! Offscreen buffer stencil size.
+        enum class OffscreenStencil {
+            kNone,
+            _8,
+
+            Count,
+            First = kNone
+        };
+        TLRENDER_ENUM(OffscreenStencil);
+        TLRENDER_ENUM_SERIALIZE(OffscreenStencil);
+
+        //! Offscreen buffer multisampling.
+        enum class OffscreenSampling {
+            kNone,
+            _2,
+            _4,
+            _8,
+            _16,
+
+            Count,
+            First = kNone
+        };
+        TLRENDER_ENUM(OffscreenSampling);
+        TLRENDER_ENUM_SERIALIZE(OffscreenSampling);
+
+        //! Offscreen buffer options.
+        struct OffscreenBufferOptions
+        {
+            image::PixelType colorType = offscreenColorDefault;
+            timeline::ImageFilters colorFilters;
+            OffscreenDepth depth = OffscreenDepth::kNone;
+            OffscreenStencil stencil = OffscreenStencil::kNone;
+            OffscreenSampling sampling = OffscreenSampling::kNone;
+            bool      clear = false;
+            image::Color4f clearColor = image::Color4f(0.F, 0.F, 0.F, 0.F);
+            bool      clearDepth = true;
+            bool      pbo = false;
+            bool      storeDepth = false;
+
+            //! When true, one depth image (+ framebuffer) is allocated per
+            //! frame-in-flight so that the opaque pass's depth buffer can be
+            //! safely read by a subsequent OIT / transparency pass while the
+            //! next frame's opaque pass is already writing into its own copy.
+            //! Call bind() each frame before using any depth accessor
+            //! or beginXxxRenderPass().  Defaults to false (single shared
+            //! depth image – the original behaviour).
+            bool      multiFrameDepth = false;
+
+            bool operator==(const OffscreenBufferOptions&) const;
+            bool operator!=(const OffscreenBufferOptions&) const;
+        };
+
+        //! Offscreen buffer.
+        class OffscreenBuffer
+            : public std::enable_shared_from_this<OffscreenBuffer>
+        {
+            TLRENDER_NON_COPYABLE(OffscreenBuffer);
+
+        protected:
+            void _init(const math::Size2i&, const OffscreenBufferOptions&);
+
+            OffscreenBuffer(Fl_Vk_Context& context);
+
+        public:
+            ~OffscreenBuffer();
+
+            //! Create a new offscreen buffer.
+            static std::shared_ptr<OffscreenBuffer> create(
+                Fl_Vk_Context& context, const math::Size2i&,
+                const OffscreenBufferOptions&);
+
+            //! Get the offscreen buffer size.
+            const math::Size2i& getSize() const;
+
+            //! Get the offscreen buffer width.
+            int getWidth() const;
+
+            //! Get the offscreen buffer height.
+            int getHeight() const;
+
+            //! Get the number of channels.
+            int getChannelCount() const;
+            
+            //! Returns true if the buffer has depth.
+            bool hasDepth() const;
+
+            //! Returns true if the buffer has stencil.
+            bool hasStencil() const;
+
+            //! Get number of sampling bits.
+            VkSampleCountFlagBits getSampleCount() const;
+
+            //! Get the options.
+            const OffscreenBufferOptions& getOptions() const;
+
+            // ----------------------------------------------------------------
+            // Frame-index selection
+            // ----------------------------------------------------------------
+
+            //! Set the active frame index used by all per-frame depth and
+            //! framebuffer accessors.  Must be called once per frame (before
+            //! any depth accessor or beginXxxRenderPass()) when
+            //! options.multiFrameDepth is true.  Safe to call (and ignore)
+            //! when multiFrameDepth is false.
+            void setFrameIndex(uint32_t frameIndex);
+
+            //! Get the currently active frame index.
+            uint32_t getFrameIndex() const;
+
+            // ----------------------------------------------------------------
+            // Vulkan Accessors
+            // ----------------------------------------------------------------
+                
+            //! Get the image layout.
+            VkImageLayout getImageLayout() const;
+
+            //! Set the image layout.
+            void setImageLayout(VkImageLayout);
+
+            //! Get the depth layout for the active frame.
+            VkImageLayout getDepthLayout() const;
+            
+            //! Set the depth layout for the active frame.
+            void setDepthLayout(VkImageLayout);
+
+            //! Get image layout name.
+            const std::string getImageLayoutName() const;
+
+            //! Get depth layout name (active frame).
+            const std::string getDepthLayoutName() const;
+
+            //! Get image view.
+            VkImageView getImageView() const;
+            
+            //! Get depth image view for the active frame.
+            VkImageView getDepthImageView() const;
+
+            //! Get image.
+            VkImage getImage() const;
+
+            //! Get the depth/stencil image for the active frame.
+            VkImage getDepthImage() const;
+            
+            //! Get normal handles.
+            //! When multiFrameDepth is true, returns the framebuffer for the
+            //! active frame; otherwise the single shared framebuffer.
+            VkFramebuffer getFramebuffer() const;
+            VkRenderPass getClearRenderPass() const;
+            VkRenderPass getLoadRenderPass() const;
+
+            //! Get Sampler
+            VkSampler getSampler() const;
+
+            //! Get Extents (same as getSize()).
+            VkExtent2D getExtent() const;
+
+            //! Get viewport.
+            VkViewport getViewport() const;
+
+            //! Get scissor.
+            VkRect2D getScissor() const;
+
+            //! Get Vulkan's internal format of buffer.
+            VkFormat getFormat() const;
+            
+            //! Get Vulkan's internal format of depth buffer.
+            VkFormat getDepthFormat() const;
+            
+            //! Start/end a render passes.
+            void beginClearRenderPass(VkCommandBuffer cmd,
+                                      VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+            void beginLoadRenderPass(VkCommandBuffer cmd,
+                                     VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+            void endRenderPass(VkCommandBuffer cmd);
+            
+            //! Offscreen image transitions.
+            void transitionToShaderRead(VkCommandBuffer cmd);
+            void transitionToColorAttachment(VkCommandBuffer cmd);
+            
+            //! Depth transitions – always operate on the active frame's depth image.
+            void transitionDepthToStencilAttachment(VkCommandBuffer cmd);
+            void transitionDepthToShaderRead(VkCommandBuffer cmd);
+
+            //! Barriers to force depth to an attachment.
+            void barrierDepthForAttachment(VkCommandBuffer cmd);
+            
+            //! Set up the internal scissor.
+            void setupScissor(const math::Box2i&); 
+            
+            //! Set up the internal viewport and scissor.
+            void setupViewportAndScissor();
+
+            //! Apply internal viewport and scissor to command buffer.
+            void setupViewportAndScissor(VkCommandBuffer cmd);
+            
+            //! Create a framebuffer for the current render pass.
+            void createFramebuffer();
+            
+            //! Read-back PBO like functionality.
+            void createStagingBuffers();
+
+            //! Read the pixels with a fence.
+            void readPixels(VkCommandBuffer cmd,
+                            int32_t x = 0, int32_t y = 0,
+                            uint32_t w = 0, uint32_t h = 0);
+
+            //! Submit the read command.
+            void submitReadback(VkCommandBuffer cmd);
+            
+            //! Get back the latest pixels read into ptr.
+            VkResult getLatestReadPixels(void*& ptr);
+
+            //! Read pixels inline without a fence.
+            //! fence should come from the main UI loop.
+            void readPixelsInline(VkCommandBuffer cmd,
+                                  int32_t x, int32_t y,
+                                  uint32_t w, uint32_t h);
+
+            //! Get pixels from readPixelsInline.
+            //! Gets the pixels of the latest readPixelsInline command.
+            void* getInlineReadbackPtr();
+            
+        private:
+            Fl_Vk_Context& ctx;
+
+            void cleanup();
+            void initialize();
+            void createColorImages();
+            void createImageViews();
+            void createDepthImages();
+            void createDepthImageViews();
+            void createClearRenderPass();
+            void createLoadRenderPass();
+            void createSampler();
+
+            uint32_t findMemoryType(
+                uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+            TLRENDER_PRIVATE();
+        };
+
+        //! Check whether the offscreen buffer should be created or re-created.
+        bool doCreate(
+            const std::shared_ptr<OffscreenBuffer>&, const math::Size2i&,
+            const OffscreenBufferOptions&);
+    } // namespace vlk
+} // namespace tl

@@ -1,0 +1,48 @@
+#!/bin/bash
+# SPDX-License-Identifier: BSD-3-Clause
+# mrv2
+# Copyright Contributors to the mrv2 Project. All rights reserved.
+
+if [[ $BASH_SOURCE != $0 ]]; then
+    dir=$BASH_SOURCE
+else
+    dir=$0
+fi
+
+export KERNEL=`uname`
+
+symlink=`readlink ${dir}`
+
+if [ "$symlink" != "" ]; then
+    dir="$symlink"
+    dir=${dir%/*}
+else
+    # Find directory where mrv2 bash script resides
+    dir=${dir%/*}
+fi
+
+# If running from current directory, get full path
+if [[ "$dir" == "." ]]; then
+    dir=$PWD
+fi
+
+
+#
+# Platform specific directory for mrV2
+#
+dir=${dir%/*}
+
+#
+# Add mrv2's lib directory first to LD_LIBRARY_PATH (Linux)
+# or DYLD_FALLBACK_LIBRARY_PATH (macOS)
+#
+export LD_LIBRARY_PATH="${dir}/lib64:${dir}/lib:${dir}/lib/aarch64-linux-gnu:${dir}/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}:/usr/lib64:/usr/lib"
+export DYLD_LIBRARY_PATH="${dir}/lib:${DYLD_LIBRARY_PATH}:/usr/local/lib:/usr/ib"
+
+#
+# Make Kwin use libdecor to allow dragging subwindows outside main window.
+# This will make the title bar not follow the standard KDE look.
+#
+if [[ -z $LIBDECOR_FORCE_CSD ]]; then
+    export LIBDECOR_FORCE_CSD=1
+fi

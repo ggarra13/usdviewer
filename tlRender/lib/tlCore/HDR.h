@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2021-2024 Darby Johnston
+// All rights reserved.
+
+#pragma once
+
+#include <tlCore/Range.h>
+#include <tlCore/Util.h>
+#include <tlCore/Vector.h>
+
+#include <array>
+
+namespace tl
+{
+    namespace image
+    {
+        //! HDR color primaries.
+        enum HDRPrimaries {
+            Red = 0,
+            Green = 1,
+            Blue = 2,
+            White = 3,
+
+            Count,
+            First = Red
+        };
+        TLRENDER_ENUM(HDRPrimaries);
+        TLRENDER_ENUM_SERIALIZE(HDRPrimaries);
+
+        //! Bezier curve for HDR metadata
+        struct HDRBezier
+        { 
+            float targetLuma = 0.F;
+            float kneeX = 0.F;
+            float kneeY = 0.F;
+            float anchors[15];
+            uint8_t numAnchors = 0;
+
+            bool operator==(const HDRBezier&) const;
+            bool operator!=(const HDRBezier&) const;
+        };
+
+        //! \name Serialize
+        ///@{
+
+        void to_json(nlohmann::json&, const HDRBezier&);
+
+        void from_json(const nlohmann::json&, HDRBezier&);
+
+        ///@}
+
+        enum EOTFType : uint8_t {
+            EOTF_SRGB = 0,
+            EOTF_BT601 = 1,
+            EOTF_BT709 = 2,
+            EOTF_BT2020 = 3,
+            EOTF_BT2100_HLG = 4,
+            EOTF_BT2100_PQ = 5
+        };
+
+        //! HDR data.
+        struct HDRData
+        {
+            uint8_t eotf = EOTFType::EOTF_BT2020;
+            //! Default Rec. 2020 color primaries (red, green, blue, white).
+            std::array<math::Vector2f, HDRPrimaries::Count> primaries = {
+                math::Vector2f(.708F, .292F), math::Vector2f(.170F, .797F),
+                math::Vector2f(.131F, .046F), math::Vector2f(.3127F, .3290F)};
+            math::FloatRange displayMasteringLuminance =
+                math::FloatRange(0.F, 1000.F);
+            float maxCLL = 1000.F;
+            float maxFALL = 400.F;
+            
+            //! HDR10+ Metadata
+            float sceneMax[3] = {0.F, 0.F, 0.F};
+            float sceneAvg = 0.F;
+            HDRBezier ootf;
+
+            //! HDR CieY Metadata (DolbyVision)
+            bool  isDolbyVision = false;
+            float maxPQY = 0.F;
+            float avgPQY = 0.F;
+
+            //! HDR data is display deferred.
+            bool isDisplayReferred = false;
+
+            bool operator==(const HDRData&) const;
+            bool operator!=(const HDRData&) const;
+        };
+
+        bool isHDR(const HDRData&);
+        bool isHDRPlus(const HDRData&);
+        bool isHDRDolbyVision(const HDRData&);
+        
+        std::string primariesName(const math::Vector2f& red,
+                                  const math::Vector2f& green,
+                                  const math::Vector2f& blue,
+                                  const math::Vector2f& white);
+        std::string primariesName(const std::array<math::Vector2f, HDRPrimaries::Count> primaries);
+        std::string primariesName(const HDRData&);
+
+        HDRData nameToPrimaries(const std::string& name);
+        
+        //! \name Serialize
+        ///@{
+
+        void to_json(nlohmann::json&, const HDRData&);
+
+        void from_json(const nlohmann::json&, HDRData&);
+
+        ///@}
+    } // namespace image
+} // namespace tl
+
+#include <tlCore/HDRInline.h>

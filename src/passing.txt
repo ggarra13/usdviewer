@@ -1,0 +1,112 @@
+testUsdImagingGLAnimatedCamera/           -- OK
+testUsdImagingGLAnimatedLights/
+testUsdImagingGLAovVisualization/
+testUsdImagingGLBasicDrawing/             -- kind of, no subds and wrong colors
+testUsdImagingGLBasicDrawingNonBindless/  -- not suppoted primitives
+testUsdImagingGLBasicLighting/            -- NO
+testUsdImagingGLBasisCurvesVaryingTopology/  -- NO
+testUsdImagingGLBasisCurvesWithColor/        -- NO
+testUsdImagingGLBasisCurvesWithNormals/      -- NO
+testUsdImagingGLBasisCurvesWithPointSizeScale/ -- NO
+testUsdImagingGLBasisCurvesWithScale/          -- NO
+testUsdImagingGLBasisCurvesWithScreenSpaceWidths/  -- NO
+testUsdImagingGLBatchedDrawing.cpp
+testUsdImagingGLCameraExposure/
+testUsdImagingGLCards/
+testUsdImagingGLClippingPlanes/
+testUsdImagingGLColorOpacityPrimvar/            -- no colors, no opacity, missing geo
+testUsdImagingGLComplexityOsd3/
+testUsdImagingGLComposite/
+testUsdImagingGLCurves/
+testUsdImagingGLDisplacement/
+testUsdImagingGLDomeLight/
+testUsdImagingGLDomeLightTaskController/
+testUsdImagingGLDoubleSided/
+testUsdImagingGLEmptyMesh/
+testUsdImagingGLExtents/
+testUsdImagingGLFaceVarying/                 -- Multilple uvsets, not suppoted
+testUsdImagingGLFallbackPrimTypes/
+testUsdImagingGLFlatShading/
+testUsdImagingGLFraming/
+testUsdImagingGLFramingBBox/
+testUsdImagingGLGeomSubsets/
+testUsdImagingGLHWFaceCulling/
+testUsdImagingGLHdEmbree/
+testUsdImagingGLHdEmbreePickAndHighlight/
+testUsdImagingGLHdGp/
+testUsdImagingGLHdGp.cpp
+testUsdImagingGLHighlight/
+testUsdImagingGLHighlight.cpp
+testUsdImagingGLHoleFaces/
+testUsdImagingGLImplicits/
+testUsdImagingGLInheritedPurpose/
+testUsdImagingGLInstancePrimvars/
+testUsdImagingGLInstancing/
+testUsdImagingGLInstancingWithMaterials/   -- does not work, not even on mrv2
+testUsdImagingGLInvalidInfoId/
+testUsdImagingGLInvalidMaterial/
+testUsdImagingGLInvalidUniversalSurface/
+testUsdImagingGLMaterialPrimvars/
+testUsdImagingGLMaterialStrengthOrder/
+testUsdImagingGLMaterialTag/
+testUsdImagingGLMaterialXBasic/
+testUsdImagingGLMaterialXLibraryCustomNodes/
+testUsdImagingGLMaterialXLocalCustomNodes/
+testUsdImagingGLMaterialXTextured/
+testUsdImagingGLMaterialXvsNative/
+testUsdImagingGLMaterialsAndInstancers/
+testUsdImagingGLMeshQuadrangulation/
+testUsdImagingGLMipmap/
+testUsdImagingGLNormals/
+testUsdImagingGLNurbsCurves/
+testUsdImagingGLNurbsPatch/
+testUsdImagingGLPickAndHighlight/
+testUsdImagingGLPickAndHighlight.cpp
+testUsdImagingGLPointInstancer/
+testUsdImagingGLPoints/
+testUsdImagingGLPopOut/
+testUsdImagingGLPopOut.cpp
+testUsdImagingGLPremultiplyAlpha/   -- shows textures but not colors - no UDIMs
+testUsdImagingGLPresentDisabled/
+testUsdImagingGLPreviewSurface/
+		testPreviewSurfaceAnimated.usda - not animated texture
+		testPreviewSurfaceNormalMap.usda - shows normal map, wrong surface colors
+testUsdImagingGLPrimitiveDrawing/
+testUsdImagingGLPrimvarProcessing/  -- no points
+testUsdImagingGLPrimvarRefinement/  -- no colors/textures
+testUsdImagingGLPrimvarSharing/
+testUsdImagingGLPurpose/
+testUsdImagingGLPurpose.cpp
+testUsdImagingGLResetXformStack/
+testUsdImagingGLResync/
+testUsdImagingGLResync.cpp
+testUsdImagingGLSdr/
+testUsdImagingGLShadeBadTexture/
+testUsdImagingGLShadeBool/
+testUsdImagingGLShadeMaterial/
+testUsdImagingGLShadeMaterial_Delegate/
+testUsdImagingGLShadingPrimvars/
+testUsdImagingGLSimpleVolumes/			
+testUsdImagingGLSkelBlendShapes/
+testUsdImagingGLSkelSkinning/               -- OK, bright material
+testUsdImagingGLSkeleton/
+testUsdImagingGLSphere/
+testUsdImagingGLSubdivisionOsd3/
+testUsdImagingGLSubdivisionSchemeNone/
+testUsdImagingGLSublayerOperations/
+testUsdImagingGLSurfaceShader/           -- inverted ST texture
+testUsdImagingGLTetMesh/
+testUsdImagingGLTextureResync/
+testUsdImagingGLTextureResync.cpp
+testUsdImagingGLTextureWrap/            -- crashes
+testUsdImagingGLTriangleSubdivisionRuleOsd3/
+testUsdImagingGLUsdLux/
+testUsdImagingGLUsdRenderPass/
+testUsdImagingGLUsdSkel/
+testUsdImagingGLUsdUdims/
+testUsdImagingGLVaryingSharedMeshTopology/  -- OK
+testUsdImagingGLVaryingTopology/            -- partially OK, missing point
+testUsdImagingGLVdbVolume/
+testUsdImagingGLVelocityMotion/
+testUsdImagingGLVolumeMaterial/
+testUsdImagingGLWireframeOpacity/

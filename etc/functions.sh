@@ -1,0 +1,487 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: BSD-3-Clause
+# mrv2
+# Copyright Contributors to the mrv2 Project. All rights reserved.
+
+
+#
+# Some auxiliary functions
+#
+
+#
+# Simple function to run a command and print it out
+#
+run_cmd()
+{
+    echo "> $@"
+    # These quick commands we won't time them
+    case "$1" in
+        rm|mv|cp|ln|mkdir|touch)  # add more if you want
+            command "$@"
+            status=$?
+            ;;
+        *)  
+            eval command "$@"
+            status=$?
+	    echo
+	    ;;
+    esac
+
+    # Exit on error
+    if [[ $status -ne 0 ]]; then
+        echo "ERROR: command failed with exit code $status"
+        exit $status  
+    fi
+}
+
+
+
+#
+# Get the linux id if available
+#
+get_linux_id()
+{
+    export LINUX_ID=`cat /etc/os-release | grep 'ID_LIKE='`
+}
+
+get_compilers()
+{
+    if [[ $KERNEL == *Windows* ]]; then
+	# Native compiler (MSVC)
+	export NATIVE_C_COMPILER=`which cl.exe`
+	export NATIVE_C_COMPILER_NAME="cl.exe"
+	export NATIVE_CXX_COMPILER=`which cl.exe`
+	export NATIVE_CXX_COMPILER_NAME="cl.exe"
+
+	# Generic compiler (Clang with MSVC compatibility)
+	export GENERIC_C_COMPILER=`which clang-cl`
+	export GENERIC_C_COMPILER_NAME="clang-cl"
+	export GENERIC_CXX_COMPILER=`which clang-cl`
+	export GENERIC_CXX_COMPILER_NAME="clang-cl"
+
+	# GNU compatible compilers (MinGW/MSys2 style)
+	export GNU_C_COMPILER=`which clang`
+	export GNU_C_COMPILER_NAME="clang"
+	export GNU_CXX_COMPILER=`which clang++`
+	export GNU_CXX_COMPILER_NAME="clang++"
+
+	# Linkers & Archivers
+	export NATIVE_LINKER=`which link.exe`
+	export NATIVE_LINKER_NAME="link.exe"
+	export NATIVE_ARCHIVER=`which lib.exe`
+	export NATIVE_ARCHIVER_NAME="lib.exe"
+
+	export GENERIC_LINKER=`which link.exe`
+	export GENERIC_LINKER_NAME="link.exe"
+
+	export GNU_LINKER=""
+	export GNU_LINKER_NAME="ld.exe"
+	export GNU_ARCHIVER=""
+	export GNU_ARCHIVER_NAME="ar.exe"
+
+    elif [[ $KERNEL == *Darwin* ]]; then
+	export MACOS_BRAND=$(sysctl -n machdep.cpu.brand_string)
+
+	# C/C++ Compiler (Xcode Clang)
+	export NATIVE_C_COMPILER=`which clang`
+	export NATIVE_C_COMPILER_NAME="clang"
+	export GENERIC_C_COMPILER=`which cc`
+	export GENERIC_C_COMPILER_NAME="cc"
+
+	export NATIVE_CXX_COMPILER=`which clang++`
+	export NATIVE_CXX_COMPILER_NAME="clang++"
+	export GENERIC_CXX_COMPILER=`which c++`
+	export GENERIC_CXX_COMPILER_NAME="c++"
+
+	# Linker & Archiver
+	export NATIVE_LINKER=`which ld`
+	export NATIVE_LINKER_NAME="ld"
+	export GENERIC_LINKER=`which ld`
+	export GENERIC_LINKER_NAME="ld"
+
+	export NATIVE_ARCHIVER=`which ar`
+	export NATIVE_ARCHIVER_NAME="ar"
+
+    else
+	# Linux logic
+	# get_linux_id() # Leave just in case
+	
+	export NATIVE_C_COMPILER=`which gcc`
+	export NATIVE_C_COMPILER_NAME="gcc"
+	export NATIVE_CXX_COMPILER=`which g++`
+	export NATIVE_CXX_COMPILER_NAME="g++"
+
+	export GENERIC_C_COMPILER=`which gcc`
+	export GENERIC_C_COMPILER_NAME="gcc"
+	export GENERIC_CXX_COMPILER=`which g++`
+	export GENERIC_CXX_COMPILER_NAME="g++"
+
+	export GNU_C_COMPILER=`which gcc`
+	export GNU_C_COMPILER_NAME="gcc"
+	export GNU_CXX_COMPILER=`which g++`
+	export GNU_CXX_COMPILER_NAME="g++"
+
+	# Linker & Archiver
+	export NATIVE_LINKER=`which ld`
+	export NATIVE_LINKER_NAME="ld"
+	export NATIVE_ARCHIVER=`which ar`
+	export NATIVE_ARCHIVER_NAME="ar"
+	
+	export GENERIC_LINKER=`which ld`
+	export GENERIC_LINKER_NAME="ld"
+	export GENERIC_ARCHIVER=`which ar`
+	export GENERIC_ARCHIVER_NAME="ar"
+	
+	export GNU_LINKER=`which ld`
+	export GNU_LINKER_NAME="ld"
+	export GNU_ARCHIVER=`which ar`
+	export GNU_ARCHIVER_NAME="ar"
+    fi
+
+    if [[ -z "$GENERIC_C_COMPILER" ]]; then
+	export GENERIC_C_COMPILER=`which clang`
+	export GENERIC_C_COMPILER_NAME="clang"
+	if [[ -z "$GENERIC_C_COMPILER" ]]; then
+	    echo "WARNING: GENERIC_C_COMPILER for "\
+		 "this platform was not found. Using: ${NATIVE_C_COMPILER_NAME}"
+	    export GENERIC_C_COMPILER=${NATIVE_C_COMPILER}
+	    export GENERIC_C_COMPILER_NAME=${NATIVE_C_COMPILER_NAME}
+	fi
+    fi
+    
+    if [[ -z "$GENERIC_CXX_COMPILER" ]]; then
+	export GENERIC_CXX_COMPILER=`which clang`
+	export GENERIC_CXX_COMPILER_NAME="clang"
+	if [[ -z "$GENERIC_CXX_COMPILER" ]]; then
+	    echo "WARNING: GENERIC_CXX_COMPILER for "\
+		 "this platform was not found. Using: ${NATIVE_CXX_COMPILER_NAME}"
+	    export GENERIC_CXX_COMPILER=${NATIVE_CXX_COMPILER}
+	    export GENERIC_CXX_COMPILER_NAME=${NATIVE_CXX_COMPILER_NAME}
+	fi
+    fi
+
+    #
+    # Sanity checks
+    #
+    if [[ -z "$GNU_C_COMPILER" ]]; then
+	if [[ "$GENERIC_C_COMPILER" != "" ]]; then
+	    echo "WARNING: GNU_C_COMPILER for "\
+		 "this platform was not found. Using: ${GENERIC_C_COMPILER_NAME}"
+	    export GNU_C_COMPILER=${GENERIC_C_COMPILER}
+	    export GNU_C_COMPILER_NAME=${GENERIC_C_COMPILER_NAME}
+	else
+	    export GNU_C_COMPILER=${NATIVE_CXX_COMPILER}
+	    export GNU_C_COMPILER_NAME=${NATIVE_CXX_COMPILER_NAME}
+	fi
+    fi
+    
+    if [[ -z "$GNU_CXX_COMPILER" ]]; then
+	if [[ "$GENERIC_CXX_COMPILER" != "" ]]; then
+	    echo "WARNING: GNU_CXX_COMPILER for "\
+		 "this platform was not found. Using: ${GENERIC_CXX_COMPILER_NAME}"
+	    export GNU_CXX_COMPILER=${GENERIC_CXX_COMPILER}
+	    export GNU_CXX_COMPILER_NAME=${GENERIC_CXX_COMPILER_NAME}
+	else
+	    export GNU_CXX_COMPILER=${NATIVE_CXX_COMPILER}
+	    export GNU_CXX_COMPILER_NAME=${NATIVE_CXX_COMPILER_NAME}
+	fi
+    fi
+    
+    if [[ "$NATIVE_CXX_COMPILER_NAME" == "cl.exe" ]]; then
+	get_msvc_version
+	export NATIVE_C_COMPILER_VERSION=${MSVC_VERSION}
+	export NATIVE_CXX_COMPILER_VERSION=${MSVC_VERSION}
+	export NATIVE_LINKER_VERSION=${MSVC_VERSION}
+	export NATIVE_ARCHIVER_VERSION=${MSVC_VERSION}
+    else
+	export NATIVE_C_COMPILER_VERSION=$(get_compiler_version "${NATIVE_C_COMPILER}")
+	export NATIVE_CXX_COMPILER_VERSION=$(get_compiler_version "${NATIVE_CXX_COMPILER}")
+	export NATIVE_LINKER_VERSION=$(get_linker_version ${NATIVE_LINKER})
+	export NATIVE_ARCHIVER_VERSION=$(get_archiver_version ${NATIVE_ARCHIVER})
+    fi
+    
+    export GENERIC_C_COMPILER_VERSION=$(get_compiler_version "${GENERIC_C_COMPILER}")
+    export GENERIC_CXX_COMPILER_VERSION=$(get_compiler_version "${GENERIC_CXX_COMPILER}")
+    export GENERIC_LINKER_VERSION=$(get_linker_version ${GENERIC_LINKER})
+    export GENERIC_ARCHIVER_VERSION=$(get_archiver_version ${GENERIC_ARCHIVER})
+    
+    export GNU_C_COMPILER_VERSION=$(get_compiler_version "${GNU_C_COMPILER}")
+    export GNU_CXX_COMPILER_VERSION=$(get_compiler_version "${GNU_CXX_COMPILER}")
+    export GNU_LINKER_VERSION=$(get_linker_version ${GNU_LINKER})
+    export GNU_ARCHIVER_VERSION=$(get_archiver_version ${GNU_ARCHIVER})
+}
+
+#
+# Get kernel and architecture and on MacOS, MACOS_BRAND (Intel, M1, M2, etc).
+#
+get_kernel()
+{
+    export KERNEL=`uname`
+    export MACOS_BRAND=''
+    if [[ $KERNEL == *MSYS* || $KERNEL == *MINGW* ||
+	      $KERNEL == *Windows* ]]; then
+	export KERNEL=Windows
+    elif [[ $KERNEL == *Darwin* ]]; then
+	export MACOS_BRAND=$(sysctl -n machdep.cpu.brand_string)
+    else
+	get_linux_id
+    fi
+
+    if [[ $ARCH == "" ]]; then
+	export ARCH=`uname -m` # was uname -a
+	export UNAME_ARCH=$ARCH # Store uname architecture to compile properly
+    fi
+    
+    if [[ $KERNEL == *Darwin* ]]; then
+	if [[ $ARCH == aarch64 || $ARCH == arm64 ]]; then
+	    export ARCH=arm64
+	else
+	    export ARCH=amd64
+	fi
+    else
+	if [[ $ARCH == aarch64 || $ARCH == arm64 ]]; then
+	    export ARCH=aarch64
+	elif [[ $ARCH == *64* ]]; then
+	    export ARCH=amd64
+	    # \@bug: on aarch windows we currently get amd64 from uname -m,
+	    #        so we get the architecture from clang.
+	    if [[ $KERNEL == *Windows* ]]; then
+		has_aarch64=`clang.exe --version`
+		if [[ $has_aarch64 == *aarch64* ]]; then
+		    export ARCH=aarch64
+		    export UNAME_ARCH=aarch64
+		fi
+	    fi
+	else
+	    export ARCH=i386
+	fi
+    fi
+}
+
+#
+# Extract compiler version for MSVC (There's no --version command in MSVC)
+#
+get_msvc_version()
+{
+    export MSVC_VERSION=`echo $VCINSTALLDIR | grep -o '2[0-9]\+'`
+}
+
+#
+# Extract compiler version passed as first string
+#
+get_compiler_version() {
+    local compiler="$1"
+
+    # Extract first version string (v optional, digits + optional .digits)
+    "${compiler}" --version 2>/dev/null |
+        grep -oE 'v?[0-9]+(\.[0-9]+)*' |
+        head -n1
+}
+
+#
+# Extract linker version passed as first string
+#
+get_linker_version() {
+    local linker="$1"
+
+    if [[ $KERNEL == *Darwin* ]]; then
+	"${linker}" -v 2>&1 | grep -oE 'version v?[0-9]+(\.[0-9]+)*' |
+	    sed -e 's#version ##' | head -n1
+    else
+	# Extract first version string (v optional, digits + optional .digits)
+	"${linker}" --version 2>/dev/null |
+            grep -oE 'v?[0-9]+(\.[0-9]+)*' |
+            head -n1
+    fi
+}
+
+#
+# Extract linker version passed as first string
+#
+get_archiver_version() {
+    local archiver="$1"
+
+    # Extract first version string (v optional, digits + optional .digits)
+    "${archiver}" --version 2>/dev/null |
+        grep -oE 'v?[0-9]+(\.[0-9]+)*' |
+        head -n1
+}
+
+#
+# Extract cmake version
+#
+get_cmake_version()
+{
+    export CMAKE_LOCATION=`which cmake`
+    export CMAKE_VERSION=`cmake --version | grep -o 'cmake version [0-9.]*' | cut -d' ' -f3`
+}
+
+#
+# Extract git version
+#
+get_git_version()
+{
+    export GIT_LOCATION=`which git`
+    export GIT_VERSION=`git --version | grep -oE 'v?[0-9]+(\.[0-9]+)*'`
+}
+
+#
+# Extract version from cmake/version.cmake
+#
+extract_version()
+{
+    local major=`cat cmake/version.cmake | grep -o 'VERSION_MAJOR\s*[0-9]' | sed -e 's/VERSION_MAJOR[ \t]*//'`
+    local minor=`cat cmake/version.cmake | grep -o 'VERSION_MINOR\s*[0-9]' | sed -e 's/VERSION_MINOR[ \t] *//'`
+    local patch=`cat cmake/version.cmake | grep -o 'VERSION_PATCH\s*[0-9]-*[a-z]*[A-Z]*-*[0-9]*' | sed -e 's/VERSION_PATCH[ \t]*//'`
+    export usdviewer_VERSION="${major}.${minor}.${patch}"
+}
+
+
+#
+# Function to locate python.  Returns:
+# PYTHONDIR           - directory of python executable
+# PYTHONEXE           - name of python executable
+# PYTHON              - full path to python executable
+# PYTHON_VERSION      - full version of python executable, like 3.11
+# PYTHON_SITEDIR      - directory of python site libraries (site-packages)
+# PYTHON_USER_SITEDIR - directory of user's pythons site libraries 
+# PYTHON_LIBDIR       - directory of python dynamic libraries
+#
+
+locate_python() {
+    # Clear previous exports to ensure a clean slate
+    unset PYTHONDIR PYTHONEXE PYTHONPATH PYTHONHOME PYTHON PYTHON_VERSION PYTHON_SITEDIR PYTHON_USER_SITEDIR PYTHON_LIBDIR
+
+    local executables=("python.sh" "py.exe" "python3.13" "python3.12" "python3.11" "python3" "python")
+    local locations
+    
+    # Check if BUILD_DIR exists and is a directory
+    locations="/usr/local/bin ${PATH} /usr/bin"
+
+    # Loop through locations and executables to find a working Python
+    for loc in $(echo "${locations}" | tr ':' ' '); do
+        for exe in "${executables[@]}"; do
+            local full_path="$(command -v "${loc}/${exe}" 2>/dev/null)"
+            if [[ -x "${full_path}" ]]; then
+                export PYTHON="${full_path}"
+                export PYTHONEXE="${exe}"
+                export PYTHONDIR="$(dirname "${full_path}")"
+                break 2 # Found it, exit both loops
+            fi
+        done
+    done
+    
+    # If Python is still not found, handle the error
+    if [[ -z "${PYTHON}" ]]; then
+        if [[ -z $BUILD_PYTHON ]]; then
+            echo "No python found! Please install it in your PATH." >&2
+            exit 1
+        fi        # Fallback for when BUILD_PYTHON is set
+        export PYTHONDIR="${PWD}/${BUILD_DIR}/install/bin/"
+        if [[ "${KERNEL}" != *Windows* && "${KERNEL}" != *MSYS* && "${KERNEL}" != *mingw* ]]; then
+            export PYTHONEXE=python3
+        else
+            export PYTHONEXE=python
+        fi
+        export PYTHON="${PYTHONDIR}/${PYTHONEXE}"
+    fi
+    # Normalize paths for Windows (convert to Unix-style if in Windows/Cygwin)
+    if [[ "${KERNEL}" == *Windows* || "${KERNEL}" == *MSYS* || "${KERNEL}" == *mingw* ]]; then
+        PYTHON=$(cygpath -u "${PYTHON}" 2>/dev/null || echo "${PYTHON}")
+        PYTHONDIR=$(cygpath -u "${PYTHONDIR}" 2>/dev/null || echo "${PYTHONDIR}")
+    fi
+    
+    # Use Python to determine version and directories
+    if [[ -x "${PYTHON}" ]]; then
+        local python_info
+	python_info=$("${PYTHON}" -c "import sys; import site; import os; print(f'VER={sys.version_info.major}.{sys.version_info.minor}\nLIBDIR={sys.exec_prefix}/lib\nUSER_SITEDIR={site.getusersitepackages()}'); sp_dirs=site.getsitepackages(); sitedir=[d for d in sp_dirs if d.endswith('site-packages')][0] if [d for d in sp_dirs if d.endswith('site-packages')] else ''; print(f'SYSTEM_SITEDIR={sitedir}')" 2>/dev/null)
+        if [[ -n "${python_info}" ]]; then
+            export PYTHON_VERSION=$(echo "${python_info}" | grep 'VER=' | cut -d'=' -f2)
+            export PYTHON_LIBDIR=$(echo "${python_info}" | grep 'LIBDIR=' | cut -d'=' -f2)
+            export PYTHON_SITEDIR=$(echo "${python_info}" | grep 'SYSTEM_SITEDIR=' | cut -d'=' -f2)
+            export PYTHON_USER_SITEDIR=$(echo "${python_info}" | grep 'USER_SITEDIR=' | cut -d'=' -f2)
+        else
+            echo "Could not get Python details from ${PYTHON}. Falling back to old method." >&2
+	    
+        fi
+    fi
+
+    # Report if crucial variables are missing
+    if [[ ! -d "${PYTHON_LIBDIR}" ]]; then
+        echo "Python libdir could not be determined! PYTHON_LIBDIR=${PYTHON_LIBDIR}" >&2
+    fi
+    if [[ ! -d "${PYTHON_SITEDIR}" ]]; then
+        echo "Python site-packages could not be determined! PYTHON_SITEDIR=${PYTHON_SITEDIR}" >&2
+    fi
+}
+
+
+#
+# Auxiliary function to send from the staging location to the packages/
+#
+send_to_packages()
+{
+    local stage=$PWD/$BUILD_DIR/mrv2/src/mrv2-build
+    local package=$stage/$1
+    if [[ "$CMAKE_TARGET" != "" ]]; then
+	if [[ "$GITHUB_REPOSITORY" != "" ]]; then
+	    package_dir=$PWD/paquetes/$BUILD_DIR
+	else
+	    package_dir=$PWD/packages/$BUILD_DIR
+	fi
+	mkdir -p $package_dir
+	if [[ -e $package ]]; then
+	    echo "mv $package $PWD/packages/$BUILD_DIR"
+	    mv $package $package_dir
+	else
+	    echo "ERROR package $1 was not created in $stage."
+	fi
+    else
+	echo "CMAKE_TARGET is empty.  Will not copy packages."
+    fi
+}
+
+
+# Function to ask the question and return 1 for yes, 0 for no
+# in response variable
+ask_question()
+{
+    while true; do
+	read -p "$1 (y/n): " answer
+	case "$answer" in
+	    [Yy]*)
+		response=1; break;;
+	    [Nn]*)
+		response=2; break;;
+	    *) echo "Please answer y or n." ;;
+	esac
+    done
+}
+
+#
+# Auxiliary function to ask to continue (y/n)
+#
+ask_to_continue()
+{
+    echo ""
+    echo "Are you sure you want to continue? (y/n)"
+    read input
+    if [[ $input == n* || $input == N* ]]; then
+	exit 0
+    fi
+}
+
+clean_mo_files()
+{
+    local lcdir
+    local locales_dir
+    echo ""
+    echo "Cleaning .mo files"
+    echo
+    
+    locales_dir="${BUILD_DIR}/install/share/locale/* ${BUILD_DIR}/install/python/plug-ins/locales/*"
+    for _dir in $locales_dir; do
+	rm -rf $_dir
+    done
+}
+    
