@@ -1,8 +1,7 @@
 #include "USDEnginePrimitive.h"
 
-#include "USDRender/Render.h"
-#include "USDRender/ShadersBinary.h"
-
+#include "render/Render.h"
+#include "render/ShadersBinary.h"
 
 #include "usd/material.h"
 

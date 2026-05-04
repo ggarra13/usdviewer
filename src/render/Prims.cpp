@@ -5,8 +5,8 @@
 
 #include "USDTextureSlots.h"
 
-#include "USDRender/Private.h"
-#include "USDRender/Structs.h"
+#include "render/Private.h"
+#include "render/Structs.h"
 
 #include <tlVk/Vk.h>
 

@@ -8,43 +8,15 @@
 
 #include <FL/vk_enum_string_helper.h>   // must come first.
 
-// #include "USDProcessSkeletonRoot.h"  // \@todo: do deformation in compute shader
-#include "USDCollectTextures.h"
-#include "USDRenderEngine.h"
-#include "USDTextureSlots.h"
+#include "engine/render.h"
 
-#include "USDRender/Render.h"
-#include "USDRender/ShadersBinary.h"
-
-#include <tlCore/Context.h>
+#include "render/Render.h"
+#include "render/ShadersBinary.h"
 
 #include <pxr/pxr.h>
 
-// math primitives
-#include <pxr/base/gf/matrix4d.h>
-#include <pxr/base/gf/vec3f.h>
-
-// diagnostics
-#include <pxr/base/tf/diagnostic.h>
-#include <pxr/base/tf/token.h>
-#include <pxr/base/tf/stringUtils.h>
-
 #include <pxr/usd/usd/stage.h>
 #include <pxr/usd/usd/timeCode.h>
-#include <pxr/usd/usd/primRange.h>
-
-#include <pxr/usd/usdUtils/pipeline.h>
-
-#include <pxr/usdImaging/usdAppUtils/api.h>
-#include <pxr/usdImaging/usdAppUtils/camera.h>
-#include <pxr/usdImaging/usdAppUtils/frameRecorder.h>
-
-#include <pxr/imaging/hd/renderBuffer.h>
-#include <pxr/imaging/hdSt/hioConversions.h>
-#include <pxr/imaging/hdSt/textureUtils.h>
-#include <pxr/imaging/hdx/tokens.h>
-#include <pxr/imaging/hdx/types.h>
-
 
 #include <tlVk/OffscreenBuffer.h>
 #include <tlVk/Shader.h>

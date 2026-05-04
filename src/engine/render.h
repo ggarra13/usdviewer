@@ -61,4 +61,4 @@ namespace tl
     }
 }
 
-#include "USDRenderEnginePrivate.h"
+#include "engine/private.h"

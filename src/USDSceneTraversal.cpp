@@ -15,7 +15,7 @@
 #include <pxr/usd/usdGeom/xformCache.h>
 #include <pxr/usd/usdGeom/primvarsAPI.h>
 
-#include "USDRenderEngine.h"  // must come last
+#include "engine/render.h"  // must come last
 
 namespace tl
 {

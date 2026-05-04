@@ -13,16 +13,17 @@ cmake_policy(SET CMP0114 NEW)
 set(HEADERS
     USDCollectTextures.h
     USDGetMaterials.h
-    USDRenderEngine.h
 
-    USDRender/ShadersBinary.h
-    USDRender/Private.h
-    USDRender/Render.h
+    render/ShadersBinary.h
+    render/Private.h
+    render/Render.h
 
     USDEnginePrimitive.h
     USDResolveTexture.h
 
     engine/options.h
+    engine/private.h
+    engine/render.h
 
     usdgeom/pointBased.h
     usdgeom/prim.h
@@ -34,14 +35,15 @@ set(HEADERS
 )
 set(SOURCES
     
-    USDRender/Render.cpp
-    USDRender/Prims.cpp
-    USDRender/Shaders.cpp
-    USDRender/Vulkan.cpp
+    render/Render.cpp
+    render/Prims.cpp
+    render/Shaders.cpp
+    render/Vulkan.cpp
+
+    engine/render.cpp
     
     USDCollectTextures.cpp
     USDGetMaterials.cpp
-    USDRenderEngine.cpp
     USDResolveTexture.cpp
     USDSceneTraversal.cpp
 

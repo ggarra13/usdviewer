@@ -53,7 +53,7 @@
 #include <pxr/imaging/hdx/tokens.h>
 #include <pxr/imaging/hdx/types.h>
 
-#include "USDRenderEngine.h"  // must come after Pixar includes
+#include "engine/render.h"  // comes after Pixar includes or a conflict arists
 
 #include <tlVk/OffscreenBuffer.h>
 #include <tlVk/Shader.h>

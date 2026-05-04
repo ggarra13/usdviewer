@@ -4,7 +4,7 @@
 
 #include "USDTextureSlots.h"
 
-#include "USDRender/Private.h"
+#include "render/Private.h"
 
 #include <FL/vk_enum_string_helper.h>
 
