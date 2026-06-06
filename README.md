@@ -12,7 +12,7 @@ usdviewer
 usdviewer is an open source review tool for OpenUSD scenes that does not depend on Hydra or OpenGL.  It currently works with Vulkan and does not yet support raytracing as macOS' MoltenVK does not support the extension (next year will port to KosmicKrisp which does support it).
 
 ![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
-![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
+![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab_lowres.png)
 
 Contents:
 
