@@ -9,13 +9,14 @@
 usdviewer
 =========
 
-usdviewer is an open source review tool for OpenUSD scenes that does not depend on Hydra or OpenGL.  It currently works with Vulkan and does not yet support raytracing as macOS' Vulkan does not support the extension (next year will port to KosmicKrisp which does support it).
+usdviewer is an open source review tool for OpenUSD scenes that does not depend on Hydra or OpenGL.  It currently works with Vulkan and does not yet support raytracing as macOS' MoltenVK does not support the extension (next year will port to KosmicKrisp which does support it).
+
+![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
+![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
 
 Contents:
 
 - [Pre-built Binaries](#pre-built-binaries)
-    - [Compatibility](#compatibility) 
-    - [Notes on Installation](#notes-on-installation)
 - [Features](#features)
 - [Running usdviewer](#running-usdviewer)
     - [macOS and Linux](#macos-and-linux)
@@ -23,6 +24,10 @@ Contents:
 
 ![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
 ![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
+
+# Pre-built Binaries
+
+Not yet available.
 
 # Features
 
@@ -39,13 +44,31 @@ Currently supported:
   * Animation
   * Skeleton and Shape deformations
   * Pixar's USDPreview shader
+  * All texture types (roughness, diffuse, opacity, ambient occlusion, etc)
+  * Normal mapping
   * Textures with one single Primvar (like 'st')
-- Linux, Windows and macOS Silicon.
+- Linux, Windows (amd64 and aarch64) and macOS Silicon.
 
 Not yet supported:
 
 - Raytracing or OIT transparency
+- Displacement mapping with a geometry shader.
 - Skeletons with a compute shader. 
-- Improved performance (mrv2 is still faster and more rich in features).
+- Improved performance (mrv2's OpenUSD is still faster and more rich in features).
 - Saving of images.
+- Changing cameras or orbiting around the scene.
 - No MaterialX support.
+
+# Running usdviewer:
+
+## macOS and Linux:
+
+```
+BUILD-<Platform>-<ARCH>/Release/install/bin/usdviewer.sh <asset.usd>
+```
+
+## Windows
+
+``` 
+BUILD-Windows-<ARCH>/Release/install/bin/usdviewer <asset.usd>
+```
