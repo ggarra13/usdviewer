@@ -22,9 +22,6 @@ Contents:
     - [macOS and Linux](#macos-and-linux)
     - [Windows](#windows)
 
-![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
-![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
-
 # Pre-built Binaries
 
 Not yet available.
