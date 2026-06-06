@@ -21,8 +21,8 @@ Contents:
     - [macOS and Linux](#macos-and-linux)
     - [Windows](#windows)
 
-![banner](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
-![banner](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
+![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/hummingbird.gif)
+![Screenshot](https://github.com/ggarra13/usdviewer/blob/main/assets/images/ALab.png)
 
 # Features
 
