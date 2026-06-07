@@ -127,29 +127,32 @@ if(APPLE)
     configure_file(${MRV2_DIR}/etc/macOS/mrv2.icns
 	${MRV2_BUNDLE_DIR}/Contents/Resources/${mrv2_NAME}.icns COPYONLY)
     
-    # Copy the shell script into the bundles' MacOS as 'launcher.sh'
-    # and make them executable
-    configure_file(${MRV2_DIR}/etc/macOS/mrv2.sh
-	${MRV2_BUNDLE_DIR}/Contents/MacOS/launcher.sh 
-	FILE_PERMISSIONS
-	OWNER_READ OWNER_EXECUTE
-	GROUP_READ GROUP_EXECUTE
-	WORLD_READ WORLD_EXECUTE
-	COPYONLY)
-
     # Copy the Info.plist modifying its variables
     configure_file(
      	${MRV2_DIR}/etc/macOS/mrv2.plist.in
      	${MRV2_BUNDLE_DIR}/Contents/Info.plist )
 
+    # Copy the shell script into the MacOS bundle and make them executable
+    configure_file(${MRV2_DIR}/etc/macOS/mrv2.sh
+	${MRV2_BUNDLE_DIR}/Contents/MacOS/${mrv2_NAME}
+	FILE_PERMISSIONS
+	OWNER_READ OWNER_EXECUTE
+	GROUP_READ GROUP_EXECUTE
+	WORLD_READ WORLD_EXECUTE
+	COPYONLY)
     
+    # Install mrv2.app / vmrv2.app bundle dir
     install(DIRECTORY ${MRV2_BUNDLE_DIR}
 	DESTINATION .
 	USE_SOURCE_PERMISSIONS
 	COMPONENT applications
     )
-    
 
+    # Install README.md file at root of .dmg
+    install(FILES "/tmp/macOS/README.md"
+        DESTINATION .
+        COMPONENT applications
+    )
     
     if (EXISTS ${CMAKE_INSTALL_PREFIX}/bin/hdr)
 	
@@ -198,7 +201,6 @@ if(APPLE)
     
     
     
-    set(CPACK_COMPONENTS_ALL "macos_bundles")
     set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${mrv2_NAME};applications;/")
     set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_BINARY_DIR}/install;.")
 
@@ -251,23 +253,6 @@ elseif(UNIX)
     else()
 	message(STATUS "-----------No hdr utility------------------")
     endif()
-    
-    if (EXISTS "${CMAKE_INSTALL_PREFIX}/bin/usdviewer")
-	message(STATUS "-----------usdviewer utility------------------")
-	configure_file( ${MRV2_DIR}/etc/Linux/usdviewer.main.desktop.in
-	    "${PROJECT_BINARY_DIR}/etc/usdviewer.desktop")
-	configure_file( ${MRV2_DIR}/etc/Linux/usdviewer.desktop.in
-	    "${PROJECT_BINARY_DIR}/etc/usdviewer-v${mrv2_VERSION}.desktop")
-    
-	install(FILES "${PROJECT_BINARY_DIR}/etc/usdviewer.desktop"
-	    DESTINATION share/applications COMPONENT applications)
-	install(FILES "${PROJECT_BINARY_DIR}/etc/usdviewer-v${mrv2_VERSION}.desktop"
-	    DESTINATION share/applications COMPONENT applications)
-    else()
-	message(STATUS "-----------No usdviewer utility------------------")
-    endif()
-
-
 
     set(CPACK_INSTALL_PREFIX /usr/local/${mrv2ShortName})
 
@@ -434,6 +419,7 @@ if(BUILD_PYTHON)
     list(APPEND mrv2_COMPONENTS 
 	python_demos
 	python_tk
+	python_plugins
     )
 endif()
 
@@ -442,6 +428,7 @@ set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "${mrv2_NAME} Application")
 set(CPACK_COMPONENT_DOCUMENTATION_DISPLAY_NAME "${mrv2_NAME} Documentation")
 if(BUILD_PYTHON)
     set(CPACK_COMPONENT_PYTHON_DEMOS_DISPLAY_NAME "${mrv2_NAME} Python Demos")
+    set(CPACK_COMPONENT_PYTHON_PLUGINS_DISPLAY_NAME "${mrv2_NAME} Python FLTK Plugins")
     set(CPACK_COMPONENT_PYTHON_TK_DISPLAY_NAME "Python TK Libraries")
     set(CPACK_COMPONENT_PYTHON_TK_DISABLED TRUE)
 endif()

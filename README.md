@@ -17,7 +17,11 @@ usdviewer is an open source review tool for OpenUSD scenes that does not depend 
 Contents:
 
 - [Pre-built Binaries](#pre-built-binaries)
-- [Features](#features)
+- [Information](#information)
+- [Currently Supported](#currently-supported)
+	- [Features](#features)
+	- [Primitives](#primitives)
+- [Not yet supported](#not-yet-supported)
 - [Running usdviewer](#running-usdviewer)
     - [macOS and Linux](#macos-and-linux)
     - [Windows](#windows)
@@ -26,27 +30,31 @@ Contents:
 
 Not yet available.
 
-# Features
+# Information
 
 The source code is written in C++20 and uses CMake for the build system, with some bash scripts for auxiliary tasks.  
 
-Currently supported:
+# Currently supported:
 
-- Primitives:
+## Features: 
+  
   * HDR support
-  * Sphere
-  * Subdivisions' unsubdivided mesh
-  * Variant meshes
-  * Meshes
   * Animation
   * Skeleton and Shape deformations
   * Pixar's USDPreview shader
   * All texture types (roughness, diffuse, opacity, ambient occlusion, etc)
   * Normal mapping
   * Textures with one single Primvar (like 'st')
-- Linux, Windows (amd64 and aarch64) and macOS Silicon.
-
-Not yet supported:
+  * Saving of OpenEXRs
+  * Linux, Windows and macOS.
+  
+## Primitives:
+  * Sphere
+  * Subdivisions' unsubdivided mesh
+  * Variant meshes
+  * Meshes
+  
+# Not yet supported:
 
 - Raytracing or OIT transparency
 - Displacement mapping with a geometry shader.
