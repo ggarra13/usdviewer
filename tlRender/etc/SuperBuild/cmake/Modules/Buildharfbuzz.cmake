@@ -15,6 +15,7 @@ set(harfbuzz_PATCH )
 
 set(harfbuzz_ARGS
     ${TLRENDER_EXTERNAL_ARGS}
+    -DCMAKE_INSTALL_INCLUDEDIR=include
     -DHB_HAVE_FREETYPE=ON)
 
 ExternalProject_Add(

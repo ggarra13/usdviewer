@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# mrv2 (mrv2)
-# Copyright Contributors to the mrv2 Project. All rights reserved.
+# usdviewer (usdviewer)
+# Copyright Contributors to the usdviewer Project. All rights reserved.
 
 #
 # Common CPACK options to all generators
@@ -8,16 +8,13 @@
 string(TIMESTAMP THIS_YEAR "%Y")
 
 set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/../LICENSE" )
-set( CPACK_PACKAGE_VERSION_MAJOR "${mrv2_VERSION_MAJOR}" )
-set( CPACK_PACKAGE_VERSION_MINOR "${mrv2_VERSION_MINOR}" )
-set( CPACK_PACKAGE_VERSION_PATCH "${mrv2_VERSION_PATCH}" )
-set( CPACK_PACKAGE_VERSION "${mrv2_VERSION}")
+set( CPACK_PACKAGE_VERSION_MAJOR "${usdviewer_VERSION_MAJOR}" )
+set( CPACK_PACKAGE_VERSION_MINOR "${usdviewer_VERSION_MINOR}" )
+set( CPACK_PACKAGE_VERSION_PATCH "${usdviewer_VERSION_PATCH}" )
+set( CPACK_PACKAGE_VERSION "${usdviewer_VERSION}")
 set( CPACK_PACKAGE_CONTACT "ggarra13@gmail.com")
 
-set( mrv2_NAME mrv2 )
-if (MRV2_BACKEND STREQUAL "VK")
-    set( mrv2_NAME vmrv2 )
-endif()
+set( usdviewer_NAME usdviewer )
 
 
 #
@@ -29,30 +26,30 @@ else()
     set( CPACK_THREADS 0 )
 endif()
 
-set( MRV2_OS_BITS 32 )
+set( USDVIEWER_OS_BITS 32 )
 if(APPLE)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES ".*arm.*" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES ".*aarch.*")
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	    set( MRV2_OS_BITS 64 )
-            set( MRV2_ARCHITECTURE "arm64")
+	    set( USDVIEWER_OS_BITS 64 )
+            set( USDVIEWER_ARCHITECTURE "arm64")
 	else()
-            set( MRV2_ARCHITECTURE "arm")
+            set( USDVIEWER_ARCHITECTURE "arm")
 	endif()
     else()
-	set( MRV2_OS_BITS 64 )
-        set( MRV2_ARCHITECTURE "amd64")
+	set( USDVIEWER_OS_BITS 64 )
+        set( USDVIEWER_ARCHITECTURE "amd64")
     endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^mips.*")
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set( MRV2_OS_BITS 64 )
-        set( MRV2_ARCHITECTURE "mips64el")
+	set( USDVIEWER_OS_BITS 64 )
+        set( USDVIEWER_ARCHITECTURE "mips64el")
     else()
-        set( MRV2_ARCHITECTURE "mipsel")
+        set( USDVIEWER_ARCHITECTURE "mipsel")
     endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^ppc.*")
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set( MRV2_ARCHITECTURE "ppc64le")
+        set( USDVIEWER_ARCHITECTURE "ppc64le")
     else()
         message(FATAL_ERROR "Architecture is not supported")
     endif()
@@ -60,37 +57,37 @@ else()  # Handles Linux and other non-Apple/MIPS/PPC systems
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES "ARM64" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-        set( MRV2_OS_BITS 64 )
-        set( MRV2_ARCHITECTURE "aarch64")
+        set( USDVIEWER_OS_BITS 64 )
+        set( USDVIEWER_ARCHITECTURE "aarch64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES "amd64")
-        set( MRV2_OS_BITS 64 )
-        set( MRV2_ARCHITECTURE "amd64")
+        set( USDVIEWER_OS_BITS 64 )
+        set( USDVIEWER_ARCHITECTURE "amd64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686" OR
 	    CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
-        set( MRV2_ARCHITECTURE "x86")
+        set( USDVIEWER_ARCHITECTURE "x86")
     else()
         message(FATAL_ERROR "Architecture ${CMAKE_SYSTEM_PROCESSOR} not supported")
     endif()
 endif()
 
-set( mrv2ShortName "${mrv2_NAME}-v${mrv2_VERSION}-${CMAKE_SYSTEM_NAME}-${MRV2_OS_BITS}" )
-set( CPACK_PACKAGE_NAME ${mrv2_NAME} )
+set( usdviewerShortName "${usdviewer_NAME}-v${usdviewer_VERSION}-${CMAKE_SYSTEM_NAME}-${USDVIEWER_OS_BITS}" )
+set( CPACK_PACKAGE_NAME ${usdviewer_NAME} )
 set( CPACK_PACKAGE_VENDOR "Gonzalo Garramuno (ggarra13@gmail.com)" )
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional media player.")
-set( CPACK_PACKAGE_INSTALL_DIRECTORY ${mrv2ShortName} )
-set( CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-v${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${MRV2_ARCHITECTURE} )
+set( CPACK_PACKAGE_INSTALL_DIRECTORY ${usdviewerShortName} )
+set( CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-v${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}-${USDVIEWER_ARCHITECTURE} )
 
 #
-# This is the mrv2/ subdir
+# This is the usdviewer/ subdir
 #
-set(MRV2_DIR ${CMAKE_SOURCE_DIR})
+set(USDVIEWER_DIR ${CMAKE_SOURCE_DIR})
 
 #
-# This is the root of mrv2
+# This is the root of usdviewer
 #
-file(REAL_PATH "${MRV2_DIR}/.." MRV2_ROOT)
+file(REAL_PATH "${USDVIEWER_DIR}/.." USDVIEWER_ROOT)
 
 set(CPACK_VERBOSE ON)
 set(CPACK_FILTER_IGNORE_FILES "/.git/;/build/;/CMakeFiles/;.o;.a;.lib")
@@ -100,49 +97,48 @@ set(CPACK_FILTER_IGNORE_FILES "/.git/;/build/;/CMakeFiles/;.o;.a;.lib")
 # This dummy (empty) install script is needed so variables get passed to
 # the CPACK_PRE_BUILD_SCRIPTS.
 #
-set( CPACK_INSTALL_SCRIPT ${MRV2_ROOT}/cmake/dummy.cmake )
+set( CPACK_INSTALL_SCRIPT ${USDVIEWER_ROOT}/cmake/dummy.cmake )
 
 #
 # This pre-build script does some cleaning of files in packaging area to
 # keep installers smaller.
 #
-set( CPACK_PRE_BUILD_SCRIPTS ${MRV2_ROOT}/cmake/prepackage.cmake )
+set( CPACK_PRE_BUILD_SCRIPTS ${USDVIEWER_ROOT}/cmake/prepackage.cmake )
 
 if(APPLE)
     ##############################
     # New Method using Dragndrop #
     ##############################
-    set( INSTALL_NAME ${mrv2_NAME} )
-    set( HDR_INSTALL_NAME hdr )
+    set( INSTALL_NAME ${usdviewer_NAME} )
 
     # Define variables for bundle directories in the build dir
-    set(MRV2_BUNDLE_DIR ${CMAKE_BINARY_DIR}/${mrv2_NAME}.app)
+    set(USDVIEWER_BUNDLE_DIR ${CMAKE_BINARY_DIR}/${usdviewer_NAME}.app)
 
-    # Create the mrv2.app bundle structure
-    message(STATUS "CREATE ${mrv2_NAME}.app dir")
-    file(MAKE_DIRECTORY ${MRV2_BUNDLE_DIR}/Contents/MacOS)
-    file(MAKE_DIRECTORY ${MRV2_BUNDLE_DIR}/Contents/Resources)
+    # Create the usdviewer.app bundle structure
+    message(STATUS "CREATE ${usdviewer_NAME}.app dir")
+    file(MAKE_DIRECTORY ${USDVIEWER_BUNDLE_DIR}/Contents/MacOS)
+    file(MAKE_DIRECTORY ${USDVIEWER_BUNDLE_DIR}/Contents/Resources)
     
     # Copy the icon
-    configure_file(${MRV2_DIR}/etc/macOS/mrv2.icns
-	${MRV2_BUNDLE_DIR}/Contents/Resources/${mrv2_NAME}.icns COPYONLY)
+    configure_file(${USDVIEWER_DIR}/etc/macOS/usdviewer.icns
+	${USDVIEWER_BUNDLE_DIR}/Contents/Resources/${usdviewer_NAME}.icns COPYONLY)
     
     # Copy the Info.plist modifying its variables
     configure_file(
-     	${MRV2_DIR}/etc/macOS/mrv2.plist.in
-     	${MRV2_BUNDLE_DIR}/Contents/Info.plist )
+     	${USDVIEWER_DIR}/etc/macOS/usdviewer.plist.in
+     	${USDVIEWER_BUNDLE_DIR}/Contents/Info.plist )
 
     # Copy the shell script into the MacOS bundle and make them executable
-    configure_file(${MRV2_DIR}/etc/macOS/mrv2.sh
-	${MRV2_BUNDLE_DIR}/Contents/MacOS/${mrv2_NAME}
+    configure_file(${USDVIEWER_DIR}/etc/macOS/usdviewer.sh
+	${USDVIEWER_BUNDLE_DIR}/Contents/MacOS/${usdviewer_NAME}
 	FILE_PERMISSIONS
 	OWNER_READ OWNER_EXECUTE
 	GROUP_READ GROUP_EXECUTE
 	WORLD_READ WORLD_EXECUTE
 	COPYONLY)
     
-    # Install mrv2.app / vmrv2.app bundle dir
-    install(DIRECTORY ${MRV2_BUNDLE_DIR}
+    # Install usdviewer.app / vusdviewer.app bundle dir
+    install(DIRECTORY ${USDVIEWER_BUNDLE_DIR}
 	DESTINATION .
 	USE_SOURCE_PERMISSIONS
 	COMPONENT applications
@@ -153,55 +149,22 @@ if(APPLE)
         DESTINATION .
         COMPONENT applications
     )
-    
-    if (EXISTS ${CMAKE_INSTALL_PREFIX}/bin/hdr)
-	
-	set(HDR_BUNDLE_DIR ${CMAKE_BINARY_DIR}/hdr.app)
-	
-	# Create the hdr.app bundle structure
-	file(MAKE_DIRECTORY ${HDR_BUNDLE_DIR}/Contents/MacOS)
-	file(MAKE_DIRECTORY ${HDR_BUNDLE_DIR}/Contents/Resources)
-
-	# Copy the icon
-	message(STATUS "CREATE hdr.app dir")
-	file(COPY ${MRV2_DIR}/etc/macOS/hdr.icns
-	    DESTINATION ${HDR_BUNDLE_DIR}/Contents/Resources)
-    
-	# Copy the shell script into the MacOS bundle and make them executable
-	configure_file(${MRV2_DIR}/etc/macOS/hdr.sh
-	    ${HDR_BUNDLE_DIR}/Contents/MacOS/hdr
-	    FILE_PERMISSIONS
-	    OWNER_READ OWNER_EXECUTE
-	    GROUP_READ GROUP_EXECUTE
-	    WORLD_READ WORLD_EXECUTE
-	    COPYONLY)
-    
-	configure_file(
-     	    ${MRV2_DIR}/etc/macOS/hdr.plist.in
-     	    ${HDR_BUNDLE_DIR}/Contents/Info.plist )
-	
-	install(DIRECTORY ${HDR_BUNDLE_DIR}
-	    DESTINATION .
-	    USE_SOURCE_PERMISSIONS
-	    COMPONENT applications
-	)
-    endif()
 
     # Configure CPack for DragNDrop
     set(CPACK_GENERATOR "DragNDrop")
 
     # Package settings
-    set(CPACK_PACKAGE_ICON ${MRV2_DIR}/etc/macOS/mrv2.icns )
+    set(CPACK_PACKAGE_ICON ${USDVIEWER_DIR}/etc/macOS/usdviewer.icns )
 
     # DragNDrop settings
-    set(CPACK_DMG_VOLUME_NAME "${mrv2_NAME} Installer")
+    set(CPACK_DMG_VOLUME_NAME "${usdviewer_NAME} Installer")
     set(CPACK_DMG_FORMAT "UDZO")
     Set(CPACK_DMG_VOLUME_NAME ${CPACK_PACKAGE_FILE_NAME})
-    set(CPACK_DMG_VOLUME_ICON ${MRV2_DIR}/etc/macOS/mrv2.icns)
+    set(CPACK_DMG_VOLUME_ICON ${USDVIEWER_DIR}/etc/macOS/usdviewer.icns)
     
     
     
-    set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${mrv2_NAME};applications;/")
+    set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_BINARY_DIR};${usdviewer_NAME};applications;/")
     set(CPACK_INSTALLED_DIRECTORIES "${CMAKE_BINARY_DIR}/install;.")
 
 elseif(UNIX)
@@ -222,50 +185,33 @@ elseif(UNIX)
     # This desktop is the one placed on the desktop for X11/Wayland version
     # shortcuts.
     #
-    configure_file( ${MRV2_DIR}/etc/Linux/mrv2.desktop.in
-	"${PROJECT_BINARY_DIR}/etc/${mrv2_NAME}-v${mrv2_VERSION}.desktop" )
-    configure_file( ${MRV2_DIR}/etc/Linux/hdr.desktop.in
-	"${PROJECT_BINARY_DIR}/etc/hdr-v${mrv2_VERSION}.desktop" )
-
+    configure_file( ${USDVIEWER_DIR}/etc/Linux/usdviewer.desktop.in
+	"${PROJECT_BINARY_DIR}/etc/${usdviewer_NAME}-v${usdviewer_VERSION}.desktop" )
+ 
     #
     # This desktop file is for Wayland to set its icon correctly.
     #
-    configure_file( ${MRV2_DIR}/etc/Linux/mrv2.main.desktop.in
-	"${PROJECT_BINARY_DIR}/etc/${mrv2_NAME}.desktop" )
-    install(FILES "${PROJECT_BINARY_DIR}/etc/${mrv2_NAME}-v${mrv2_VERSION}.desktop"
+    configure_file( ${USDVIEWER_DIR}/etc/Linux/usdviewer.main.desktop.in
+	"${PROJECT_BINARY_DIR}/etc/${usdviewer_NAME}.desktop" )
+    install(FILES "${PROJECT_BINARY_DIR}/etc/${usdviewer_NAME}-v${usdviewer_VERSION}.desktop"
 	DESTINATION share/applications COMPONENT applications)
-    install(FILES "${PROJECT_BINARY_DIR}/etc/${mrv2_NAME}.desktop"
+    install(FILES "${PROJECT_BINARY_DIR}/etc/${usdviewer_NAME}.desktop"
 	DESTINATION share/applications COMPONENT applications)
-    install(DIRECTORY ${MRV2_DIR}/share/icons
+    install(DIRECTORY ${USDVIEWER_DIR}/share/icons
 	DESTINATION share/ COMPONENT applications)
     
-    configure_file( ${MRV2_DIR}/etc/Linux/hdr.main.desktop.in
-	"${PROJECT_BINARY_DIR}/etc/hdr.desktop")
-    configure_file( ${MRV2_DIR}/etc/Linux/hdr.desktop.in
-	"${PROJECT_BINARY_DIR}/etc/hdr-v${mrv2_VERSION}.desktop")
-
-    if (EXISTS "${CMAKE_INSTALL_PREFIX}/bin/hdr")
-	message(STATUS "-----------hdr utility------------------")
-	install(FILES "${PROJECT_BINARY_DIR}/etc/hdr.desktop"
-	    DESTINATION share/applications COMPONENT applications)
-	install(FILES "${PROJECT_BINARY_DIR}/etc/hdr-v${mrv2_VERSION}.desktop"
-	    DESTINATION share/applications COMPONENT applications)
-    else()
-	message(STATUS "-----------No hdr utility------------------")
-    endif()
-
-    set(CPACK_INSTALL_PREFIX /usr/local/${mrv2ShortName})
+    set(CPACK_INSTALL_PREFIX /usr/local/${usdviewerShortName})
 
     #
     # Linux post-install and post-remove scripts to handle versioning and
     # installation of .desktop shortcut on the user's Desktop.
     #
     configure_file(
-	${MRV2_DIR}/etc/Linux/postinst.in
+	${USDVIEWER_DIR}/etc/Linux/postinst.in
 	${PROJECT_BINARY_DIR}/etc/Linux/postinst
 	@ONLY)
     configure_file(
-	${MRV2_DIR}/etc/Linux/postrm.in
+	${USDVIEWER_DIR}/etc/Linux/postrm.in
 	${PROJECT_BINARY_DIR}/etc/Linux/postrm
 	@ONLY)
 
@@ -277,7 +223,7 @@ elseif(UNIX)
 	OUTPUT_VARIABLE DEB_ARCHITECTURE
 	OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    set(CPACK_DEBIAN_PACKAGE_NAME ${mrv2_NAME}-v${mrv2_VERSION})
+    set(CPACK_DEBIAN_PACKAGE_NAME ${usdviewer_NAME}-v${usdviewer_VERSION})
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
 	"${PROJECT_BINARY_DIR}/etc/Linux/postinst"
@@ -288,7 +234,7 @@ elseif(UNIX)
     #
     # Set RPM options.
     #
-    set(CPACK_RPM_PACKAGE_NAME ${mrv2_NAME}-${mrv2_VERSION})
+    set(CPACK_RPM_PACKAGE_NAME ${usdviewer_NAME}-${usdviewer_VERSION})
 
     set(CPACK_RPM_PACKAGE_RELOCATABLE true)
     set(CPACK_RPM_PACKAGE_AUTOREQ false)
@@ -319,10 +265,10 @@ else()
     # Create debug directory for .pdb files
     if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR
 	    CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-	list(PREPEND CPACK_PRE_BUILD_SCRIPTS ${MRV2_ROOT}/cmake/copy_pdbs.cmake )
+	list(PREPEND CPACK_PRE_BUILD_SCRIPTS ${USDVIEWER_ROOT}/cmake/copy_pdbs.cmake )
     endif()
     
-    set(CPACK_PACKAGE_INSTALL_DIRECTORY "${mrv2_NAME}-v${mrv2_VERSION}" )
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "${usdviewer_NAME}-v${usdviewer_VERSION}" )
     
     # There is a bug in NSIS that does not handle full unix paths properly. Make
     # sure there is at least one set of four (4) backlasshes.
@@ -337,26 +283,26 @@ else()
     #
     # This sets the title at the top of the installer.
     #
-    set(CPACK_NSIS_PACKAGE_NAME "${mrv2_NAME} v${mrv2_VERSION} ${CMAKE_SYSTEM_NAME}-${MRV2_OS_BITS}" )
+    set(CPACK_NSIS_PACKAGE_NAME "${usdviewer_NAME} v${usdviewer_VERSION} ${CMAKE_SYSTEM_NAME}-${USDVIEWER_OS_BITS}" )
     
     #
     # Set the executable
     #
-    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin/mrv2.exe")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin/usdviewer.exe")
 
     #
     # Set the MUI Installer icon
     #
-    set(CPACK_NSIS_MUI_ICON "${MRV2_DIR}/main/app.ico")
-    set(CPACK_NSIS_MUI_UNICON "${MRV2_DIR}/main/app.ico")
+    set(CPACK_NSIS_MUI_ICON "${USDVIEWER_DIR}/main/app.ico")
+    set(CPACK_NSIS_MUI_UNICON "${USDVIEWER_DIR}/main/app.ico")
 
     #
-    # Set the MUI banner to use a custom mrv2 one.
+    # Set the MUI banner to use a custom usdviewer one.
     #
-    set(MUI_HEADERIMAGE "${MRV2_ROOT}/cmake/nsis/NSIS_background.bmp")
-    file(TO_NATIVE_PATH "${MUI_HEADERIMAGE}" MUI_HEADERIMAGE)
-    string(REPLACE "\\" "\\\\" MUI_HEADERIMAGE "${MUI_HEADERIMAGE}")
-    set(CPACK_NSIS_MUI_HEADERIMAGE "${MUI_HEADERIMAGE}")
+    # set(MUI_HEADERIMAGE "${USDVIEWER_ROOT}/cmake/nsis/NSIS_background.bmp")
+    # file(TO_NATIVE_PATH "${MUI_HEADERIMAGE}" MUI_HEADERIMAGE)
+    # string(REPLACE "\\" "\\\\" MUI_HEADERIMAGE "${MUI_HEADERIMAGE}")
+    # set(CPACK_NSIS_MUI_HEADERIMAGE "${MUI_HEADERIMAGE}")
 
     #
     # Default location for installation.
@@ -366,28 +312,25 @@ else()
     #
     # This sets the name in Windows Apps and Control Panel.
     #
-    set(mrv2_DISPLAY_NAME "${mrv2_NAME}-${MRV2_OS_BITS} v${mrv2_VERSION}")
-    set(hdr_DISPLAY_NAME "hdr-${MRV2_OS_BITS} v${mrv2_VERSION}")
+    set(usdviewer_DISPLAY_NAME "${usdviewer_NAME}-${USDVIEWER_OS_BITS} v${usdviewer_VERSION}")
     
-    set(CPACK_NSIS_DISPLAY_NAME "${mrv2_DISPLAY_NAME}" )
+    set(CPACK_NSIS_DISPLAY_NAME "${usdviewer_DISPLAY_NAME}" )
 
-    set(CPACK_PACKAGE_EXECUTABLES "mrv2" "${mrv2_DISPLAY_NAME}")
-    set(CPACK_CREATE_DESKTOP_LINKS "mrv2" "${mrv2_DISPLAY_NAME}")
+    set(CPACK_PACKAGE_EXECUTABLES "usdviewer" "${usdviewer_DISPLAY_NAME}")
+    set(CPACK_CREATE_DESKTOP_LINKS "usdviewer" "${usdviewer_DISPLAY_NAME}")
 
 
     #
-    # Always create a desktop shortcuts to mrv2.exe and hdr.exe
+    # Always create a desktop shortcuts to usdviewer.exe and hdr.exe
     #
     set(CPACK_NSIS_CREATE_ICONS_EXTRA
-	"CreateShortCut \\\"$DESKTOP\\\\${mrv2_DISPLAY_NAME}.lnk\\\" \\\"$INSTDIR\\\\bin\\\\mrv2.exe\\\"
-         CreateShortCut \\\"$DESKTOP\\\\${hdr_DISPLAY_NAME}.lnk\\\" \\\"$INSTDIR\\\\bin\\\\hdr.exe\\\"")
+	"CreateShortCut \\\"$DESKTOP\\\\${usdviewer_DISPLAY_NAME}.lnk\\\" \\\"$INSTDIR\\\\bin\\\\usdviewer.exe\\\"")
 
     #
     # Remove the shortcuts on uninstall
     #
     set(CPACK_NSIS_DELETE_ICONS_EXTRA
-	"Delete \\\"$DESKTOP\\\\${mrv2_DISPLAY_NAME}.lnk\\\"
-	 Delete \\\"$DESKTOP\\\\${hdr_DISPLAY_NAME}.lnk\\\"")
+	"Delete \\\"$DESKTOP\\\\${usdviewer_DISPLAY_NAME}.lnk\\\"")
     
     #
     # To call uninstall first if the same version has been installed.
@@ -399,7 +342,7 @@ else()
     # Create NSIS registry
     #
     configure_file(
-	"${MRV2_ROOT}/cmake/nsis/NSISRegistry.cmake.in"
+	"${USDVIEWER_ROOT}/cmake/nsis/NSISRegistry.cmake.in"
 	"${PROJECT_BINARY_DIR}/cmake/nsis/NSISRegistry.cmake"
 	@ONLY)
     
@@ -410,28 +353,14 @@ endif()
 #
 # For Windows installer, handle the components
 #
-set(mrv2_COMPONENTS
+set(usdviewer_COMPONENTS
     applications
-    documentation
 )
 
-if(BUILD_PYTHON)
-    list(APPEND mrv2_COMPONENTS 
-	python_demos
-	python_tk
-	python_plugins
-    )
-endif()
 
-set(CPACK_COMPONENTS_ALL ${mrv2_COMPONENTS})
-set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "${mrv2_NAME} Application")
-set(CPACK_COMPONENT_DOCUMENTATION_DISPLAY_NAME "${mrv2_NAME} Documentation")
-if(BUILD_PYTHON)
-    set(CPACK_COMPONENT_PYTHON_DEMOS_DISPLAY_NAME "${mrv2_NAME} Python Demos")
-    set(CPACK_COMPONENT_PYTHON_PLUGINS_DISPLAY_NAME "${mrv2_NAME} Python FLTK Plugins")
-    set(CPACK_COMPONENT_PYTHON_TK_DISPLAY_NAME "Python TK Libraries")
-    set(CPACK_COMPONENT_PYTHON_TK_DISABLED TRUE)
-endif()
+set(CPACK_COMPONENTS_ALL ${usdviewer_COMPONENTS})
+set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "${usdviewer_NAME} Application")
+
 
 
 include(CPack)

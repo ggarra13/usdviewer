@@ -188,13 +188,6 @@ namespace tl
 {
     namespace image
     {
-        namespace
-        {
-#include <Fonts/NotoMono-Regular.font>
-#include <Fonts/NotoSans-Regular.font>
-#include <Fonts/NotoSans-Bold.font>
-        } // namespace
-
         std::shared_ptr<image::Image> scaleBitmap(
             const std::shared_ptr<image::Image>& source,
             int targetWidth, int targetHeight)
@@ -249,23 +242,6 @@ namespace tl
         std::vector<uint8_t> getFontData(const std::string& name)
         {
             std::vector<uint8_t> out;
-            if ("NotoMono-Regular" == name)
-            {
-                out.resize(NotoMono_Regular_ttf_len);
-                memcpy(
-                    out.data(), NotoMono_Regular_ttf, NotoMono_Regular_ttf_len);
-            }
-            else if ("NotoSans-Regular" == name)
-            {
-                out.resize(NotoSans_Regular_ttf_len);
-                memcpy(
-                    out.data(), NotoSans_Regular_ttf, NotoSans_Regular_ttf_len);
-            }
-            else if ("NotoSans-Bold" == name)
-            {
-                out.resize(NotoSans_Bold_ttf_len);
-                memcpy(out.data(), NotoSans_Bold_ttf, NotoSans_Bold_ttf_len);
-            }
             return out;
         }
 
@@ -295,28 +271,6 @@ namespace tl
                 if (ftError)
                 {
                     throw std::runtime_error("FreeType cannot be initialized");
-                }
-
-                ftError = FT_New_Memory_Face(
-                    p.ftLibrary, NotoSans_Regular_ttf, NotoSans_Regular_ttf_len,
-                    0, &p.ftFaces["NotoSans-Regular"]);
-                if (ftError)
-                {
-                    throw std::runtime_error("Cannot create font");
-                }
-                ftError = FT_New_Memory_Face(
-                    p.ftLibrary, NotoSans_Bold_ttf, NotoSans_Bold_ttf_len, 0,
-                    &p.ftFaces["NotoSans-Bold"]);
-                if (ftError)
-                {
-                    throw std::runtime_error("Cannot create font");
-                }
-                ftError = FT_New_Memory_Face(
-                    p.ftLibrary, NotoMono_Regular_ttf, NotoMono_Regular_ttf_len,
-                    0, &p.ftFaces["NotoMono-Regular"]);
-                if (ftError)
-                {
-                    throw std::runtime_error("Cannot create font");
                 }
             }
             catch (const std::exception& e)
