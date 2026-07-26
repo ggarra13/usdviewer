@@ -58,9 +58,110 @@ namespace tl
                 return out;
             }
 
-            VkFormat getBufferInternalFormat(
-                OffscreenDepth depth, OffscreenStencil stencil)
+            // Reverse of getVulkanSamples(), used to write a clamped sample
+            // count back into OffscreenBufferOptions so every call site that
+            // reads options.sampling (via getSampleCount()) automatically
+            // sees the clamped value.
+            OffscreenSampling getOffscreenSampling(VkSampleCountFlagBits samples)
             {
+                switch (samples)
+                {
+                case VK_SAMPLE_COUNT_2_BIT:  return OffscreenSampling::_2;
+                case VK_SAMPLE_COUNT_4_BIT:  return OffscreenSampling::_4;
+                case VK_SAMPLE_COUNT_8_BIT:  return OffscreenSampling::_8;
+                case VK_SAMPLE_COUNT_16_BIT: return OffscreenSampling::_16;
+                default:                     return OffscreenSampling::kNone;
+                }
+            }
+            // Clamps `requested` down to the highest sample count this
+            // device guarantees for a framebuffer color attachment (and,
+            // when `needsDepthStencil` is true, one that is *also*
+            // supported for a depth/stencil attachment).
+            //
+            // The Vulkan 1.3 spec only guarantees VK_SAMPLE_COUNT_1_BIT.
+            // Anything above that -- including the 8x/16x that desktop
+            // NVIDIA/AMD GPUs commonly expose via
+            // VkPhysicalDeviceLimits::framebufferColorSampleCounts /
+            // framebufferDepthSampleCounts -- is optional and must be
+            // queried rather than assumed.
+            VkSampleCountFlagBits clampSampleCount(
+                const VkPhysicalDeviceLimits& limits,
+                VkSampleCountFlagBits requested, bool needsDepthStencil)
+            {
+                if (VK_SAMPLE_COUNT_1_BIT == requested)
+                    return requested;
+
+                VkSampleCountFlags supported =
+                    limits.framebufferColorSampleCounts;
+                if (needsDepthStencil)
+                    supported &= limits.framebufferDepthSampleCounts;
+
+                static const VkSampleCountFlagBits kDescending[] = {
+                    VK_SAMPLE_COUNT_16_BIT, VK_SAMPLE_COUNT_8_BIT,
+                    VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_2_BIT};
+
+                for (VkSampleCountFlagBits candidate : kDescending)
+                {
+                    if (candidate <= requested && (supported & candidate))
+                        return candidate;
+                }
+                return VK_SAMPLE_COUNT_1_BIT;
+            }
+
+            // Returns true if `format` supports `feature` for
+            // VK_IMAGE_TILING_OPTIMAL on this physical device.
+            // VK_FORMAT_UNDEFINED is never "supported".
+            bool formatHasOptimalFeature(
+                VkPhysicalDevice gpu, VkFormat format,
+                VkFormatFeatureFlags feature)
+            {
+                if (VK_FORMAT_UNDEFINED == format)
+                    return false;
+
+                VkFormatProperties props{};
+                vkGetPhysicalDeviceFormatProperties(gpu, format, &props);
+                return (props.optimalTilingFeatures & feature) == feature;
+            }
+
+            // Returns the first candidate (in priority order) that supports
+            // `feature` with optimal tiling, or VK_FORMAT_UNDEFINED if none
+            // of them do.
+            VkFormat pickSupportedFormat(
+                VkPhysicalDevice gpu,
+                const std::initializer_list<VkFormat>& candidates,
+                VkFormatFeatureFlags feature)
+            {
+                for (VkFormat format : candidates)
+                {
+                    if (formatHasOptimalFeature(gpu, format, feature))
+                        return format;
+                }
+                return VK_FORMAT_UNDEFINED;
+            }
+
+            // Chooses a depth/stencil format for the requested
+            // depth/stencil precision, verifying support on `gpu` instead
+            // of assuming it.
+            //
+            // The Vulkan 1.3 spec only guarantees:
+            //   - VK_FORMAT_D16_UNORM is always supported.
+            //   - at least one of {VK_FORMAT_X8_D24_UNORM_PACK32,
+            //     VK_FORMAT_D32_SFLOAT} is supported.
+            //   - at least one of {VK_FORMAT_D24_UNORM_S8_UINT,
+            //     VK_FORMAT_D32_SFLOAT_S8_UINT} is supported.
+            // Everything else (D16_UNORM_S8_UINT, S8_UINT alone, and
+            // *which* member of the two "at least one of" pairs above is
+            // actually present) is optional and varies by implementation.
+            // Desktop NVIDIA/AMD drivers happen to support all of these,
+            // which is why picking a fixed format never showed a problem
+            // there -- it isn't guaranteed elsewhere.
+            VkFormat getBufferInternalFormat(
+                VkPhysicalDevice gpu, OffscreenDepth depth,
+                OffscreenStencil stencil)
+            {
+                const VkFormatFeatureFlags kDSFeature =
+                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
                 VkFormat out = VK_FORMAT_UNDEFINED;
                 switch (depth)
                 {
@@ -68,20 +169,38 @@ namespace tl
                     switch (stencil)
                     {
                     case OffscreenStencil::_8:
-                        out = VK_FORMAT_S8_UINT;
+                        // VK_FORMAT_S8_UINT support is optional and rarely
+                        // implemented in practice.  Fall back to a combined
+                        // depth/stencil format (the depth aspect is simply
+                        // left unused) rather than assuming it exists.
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT,
+                             VK_FORMAT_D32_SFLOAT_S8_UINT},
+                            kDSFeature);
                         break;
                     default:
                         break;
                     }
                     break;
                 case OffscreenDepth::_16:
-                    out = VK_FORMAT_D16_UNORM;
                     switch (stencil)
                     {
                     case OffscreenStencil::_8:
-                        out = VK_FORMAT_D16_UNORM_S8_UINT;
+                        // D16_UNORM_S8_UINT is optional; fall back to a
+                        // combined format the spec guarantees at least one
+                        // of.
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_D16_UNORM_S8_UINT,
+                             VK_FORMAT_D24_UNORM_S8_UINT,
+                             VK_FORMAT_D32_SFLOAT_S8_UINT},
+                            kDSFeature);
                         break;
                     default:
+                        // VK_FORMAT_D16_UNORM is always supported by the
+                        // spec, no query needed.
+                        out = VK_FORMAT_D16_UNORM;
                         break;
                     }
                     break;
@@ -90,10 +209,21 @@ namespace tl
                     {
                     case OffscreenStencil::kNone:
                         // No pure D24 depth format in Vulkan, fallback
-                        out = VK_FORMAT_D24_UNORM_S8_UINT;
+                        // equivalent is X8_D24_UNORM_PACK32, with
+                        // D32_SFLOAT as the spec-guaranteed alternative.
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_X8_D24_UNORM_PACK32,
+                             VK_FORMAT_D32_SFLOAT},
+                            kDSFeature);
                         break;
                     case OffscreenStencil::_8:
-                        out = VK_FORMAT_D24_UNORM_S8_UINT;
+                        // Spec guarantees at least one of these two.
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_D24_UNORM_S8_UINT,
+                             VK_FORMAT_D32_SFLOAT_S8_UINT},
+                            kDSFeature);
                         break;
                     default:
                         break;
@@ -103,10 +233,19 @@ namespace tl
                     switch (stencil)
                     {
                     case OffscreenStencil::kNone:
-                        out = VK_FORMAT_D32_SFLOAT;
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_D32_SFLOAT,
+                             VK_FORMAT_X8_D24_UNORM_PACK32},
+                            kDSFeature);
                         break;
                     case OffscreenStencil::_8:
-                        out = VK_FORMAT_D32_SFLOAT_S8_UINT;
+                        // Spec guarantees at least one of these two.
+                        out = pickSupportedFormat(
+                            gpu,
+                            {VK_FORMAT_D32_SFLOAT_S8_UINT,
+                             VK_FORMAT_D24_UNORM_S8_UINT},
+                            kDSFeature);
                         break;
                     default:
                         break;
@@ -115,6 +254,17 @@ namespace tl
                 default:
                     break;
                 }
+
+                if (out == VK_FORMAT_UNDEFINED &&
+                    (depth != OffscreenDepth::kNone ||
+                     stencil != OffscreenStencil::kNone))
+                {
+                    throw std::runtime_error(
+                        "tl::vlk::OffscreenBuffer: no supported "
+                        "depth/stencil format available on this device "
+                        "for the requested depth/stencil options.");
+                }
+
                 return out;
             }
         } // namespace
@@ -266,8 +416,8 @@ namespace tl
             p.size = size;
             p.options = offscreenBufferOptions;
             p.colorFormat = getTextureFormat(p.options.colorType);
-            p.depthFormat =
-                getBufferInternalFormat(p.options.depth, p.options.stencil);
+            p.depthFormat = getBufferInternalFormat(
+                ctx.gpu, p.options.depth, p.options.stencil);
 
             // Resolve how many depth/framebuffer slots we need.
             if (p.options.multiFrameDepth)
@@ -284,6 +434,31 @@ namespace tl
                 p.size.w = maxTextureSize;
             if (p.size.h > maxTextureSize)
                 p.size.h = maxTextureSize;
+
+            // Clamp the requested MSAA sample count to what this device
+            // actually supports. VK_SAMPLE_COUNT_8_BIT/16_BIT are optional
+            // per the Vulkan 1.3 spec; desktop NVIDIA/AMD GPUs commonly
+            // support them, but that isn't guaranteed on every conformant
+            // implementation.
+            const bool needsDepthStencil =
+                p.options.depth != OffscreenDepth::kNone ||
+                p.options.stencil != OffscreenStencil::kNone;
+            const VkSampleCountFlagBits requestedSamples =
+                getVulkanSamples(p.options.sampling);
+            const VkSampleCountFlagBits clampedSamples = clampSampleCount(
+                props.limits, requestedSamples, needsDepthStencil);
+            if (clampedSamples != requestedSamples)
+            {
+                p.options.sampling = getOffscreenSampling(clampedSamples);
+            }
+
+            totalByteCount += vlk::getDataByteCount(VK_IMAGE_TYPE_2D,
+                                                    p.size.w,
+                                                    p.size.h,
+                                                    1,
+                                                    p.colorFormat);
+            ++objectCount;
+
 
             initialize();
         }
@@ -1242,7 +1417,10 @@ namespace tl
         
             barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+            barrier.subresourceRange.baseMipLevel   = 0;
+            barrier.subresourceRange.levelCount     = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount     = 1;
 
             // We synchronize between the end of the previous depth tests and the start of the next ones.
             

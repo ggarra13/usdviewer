@@ -298,22 +298,6 @@ if [[ $ASK_TO_CONTINUE == 1 ]]; then
 fi
 
 #
-# Handle Windows pre-flight compiles
-#
-if [[ $KERNEL == *Windows* ]]; then
-    . $PWD/etc/windows/compile_dlls.sh
-fi
-
-if command -v swig > /dev/null 2>&1; then
-    swig -version
-else
-    echo
-    echo "swig NOT found!!! Cannot compile pyFLTK."
-    echo
-    exit 1
-fi
-
-#
 # Work-around FLTK's CMakeLists.txt bug
 #
 rm -rf $BUILD_DIR/install/include/FL
